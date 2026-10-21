@@ -40,7 +40,7 @@ An AI whale-girl companion that lives inside [DeepSeek Harness](https://github.c
 ### 环境要求
 
 - **DeepSeek Harness** 桌面版（推荐最新版）
-- **Node.js 20+**、**pnpm 9+**
+- **Node.js 22.12+**、**pnpm 9+**
 - Windows 10/11（桌面窗口、全局热键、键鼠注入以 Windows 为主）
 - 语音识别需要本机可用的 SenseVoice 运行时；不装也能用文字对话
 - 识屏与看图需要所选 DSH 模型支持图片输入
@@ -159,7 +159,7 @@ Not an animated sticker, but a **desktop companion with memory, a voice, screen 
 ### Requirements
 
 - **DeepSeek Harness** desktop (latest recommended)
-- **Node.js 20+**, **pnpm 9+**
+- **Node.js 22.12+**, **pnpm 9+**
 - Windows 10/11 (desktop window, global hotkey and input injection are Windows-first)
 - A working local SenseVoice runtime for speech recognition; text chat works without it
 - A DSH model with image input for screen/vision features
