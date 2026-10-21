@@ -1,0 +1,3512 @@
+/**
+ * dsh-whale-girl 待补ࣨhost half待补 待补"待补"待补
+ *
+ * ְ待补ṩ `/dsh-whale-girl/` ǰ׺待补**ҵ待补**待补handlePetRoute 待补·待补ܵ待补ã待补
+ * ȫ待补ã待补Ĭ待补 + 待补û待补 + 待补ļ待补待补 ./config 待补 readAllConfig ͳһ待补ȡ待补ϲ待补
+ * 待补ļ待补ֻ待补ķ待补ֵ待补ȷ待补У待补飩待补ٽӴ待补κ待补ļ待补
+ *
+ * 待补ͬһ待补 handlePetRoute待补
+ *   - HTTP ·待补ɣ待补ע待补 DSH WebServer 待补ϣ待补 overlay / 待补ҳ / б待补ã待补
+ *   - 待补 Helper 待补ܵ待补helper-process.ts 待补 bridgeHandler待补DSH_WHALE_BRIDGE=1 ʱ待补
+ *     dsh-whale-girl-bridge:// scheme + stdout JSON 待补 + 待补ػص待补**待补 HTTP**待补
+ *     DSH Desktop 2.0.3+ 待补բ待补Ż待补ӽ待补̵待补 HTTP 待补
+ * 待补Ϊ待补ϸ待补һ待补£待补Ӳ待补Լ待补/待补湦待补/待补İ待补/待补ȫ待补룩待补
+ *
+ * ·待补ɣ待补
+ *   /dsh-whale-girl/config             待补 待补ϲ待补**待补Ʒ待补**待补{ main:{...}, test1:{...}, ... }待补
+ *                                ÿ待补Ŀ待补ֶ待补/待补/待补ҳ待补Ψһ待补ڣ待补
+ *                                GET 待补ȡ待补Ʒ待补PUT 待补û待补㣨待补ؽ待补 main-config.jsonc待补
+ *                                POST ͬ待补û待补㣨待补Ĭ待补 config.jsonc **ԭ待补**待补д待补룬
+ *                                待补ע待补ȫ待补߼待补ֶΣ待补ϲ待补롸û待补û待补㡹待补ȼۣ待补
+ *                                待补д待补ӿڵ待补**待补Ӧ待补嶼待补Ǳ待补ĳ待补Ʒ待补ۺ待补**待补ҳ待补ʱ待补Ч
+ *                                ֱ待补ƽ待补Ӧ待补ͻ待补˲待补еڶ待补"待补Ŀ待补ֶ待补"待补ʵ待补
+ *   /dsh-whale-girl/reload              待补 待补ˡ待补á待补Ҽ待补˵待补POST待补 Helper待补ȫ待补
+ *                                待补ﴰ待补ڰ待补ؽ待补ļ待补󲻱ػ待补ҳ待补㱣待补棩待补뱣待补
+ *                                **ͬһ待补**待补·待补syncDesktop待补/display/size 待补仯ͬ待补Ч
+ *   /dsh-whale-girl/config/meta         待补 待补ļ待补ز待补Ŀ¼·待补 + ȫ待补洢λ待补嵥
+ *                                       待补ҳ待补߼待补á待补ж待补洢待补չʾ待补ã待补
+ *   /dsh-whale-girl/models              待补 待补ѡ待补 + ģ待补͡待补嵥待补ҳ待补AI ģ待补͡待补Դ待补
+ *                                       待补 DSH ģ待补ѡ待补ͬԴ待补ȡ待补 llm 待补 listProviders/listModels待补
+ *   /dsh-whale-girl/thumb/<待补زĸ待补>/<待补>.webm|.mov  待补 待补زİ待补.mov Ϊ macOS 待补ƣ待补չ待补ȡ待补
+ *       待补ͻ待补˲待补ų待补 ANIMATION_EXT待补·待补ɹ̶待补˫待补չ待补ף待补
+ *       待补ļ待补 = $DSH_HOME/dsh-whale-girl/pet/<待补زĸ待补>-animation/待补ֻ待补Լ待补ģ待补䣩待补
+ *       待补   = $DSH_HOME/dsh-whale-girl/main-animation/<webm|mov>待补û待补Ŀ¼待补ȣ待补 待补 assets/<webm|mov>
+ *       <待补زĸ待补> 待补**待补ʶ待补**待补pet/ 待补ļ待补ǰ׺待补ָ待补/待补ַ待补 400待补 ID_FORBIDDEN待补
+ *   /dsh-whale-girl/state               待补 **待补ѯͳһ״̬ S**待补GET待补ǰ待补 1s 待补ѯ待补Ψһ待补Դ待补
+ *                                       { sections: { balance, workStatus, notify }, pets: { <id>: { say } } }待补
+ *                                       ÿ待补Ҷ待补 = { counter, data }待补counter 待补ǰ待补˲待补Ⱦ待补
+ *                                       ֻ待补ڴ桢待补㸱待补ã待补ﴥ待补ⲿ待补/ģ待补ɣ待补
+ *   /dsh-whale-girl/balance              待补 待补ˢ待补£待补POST 待补˵㣬д S待补ݴ待补 /state 待补
+ *   /dsh-whale-girl/whisper              待补 待补ĳֻ待补˵һ待补䣨POST 待补˵㣬д S 待补 pets.<id>.say待补
+ *   /dsh-whale-girl/broadcast            待补 待补Ͷι待补ⲿ待补ı待补д待补ݣ待补POST 待补˵㣬д S 待补
+ *                                       pets.<id>.say待补ɡ待补ֻ待补ˣ待补ɣ待补
+ *   /dsh-whale-girl/anim                 待补 待补㲥待补貥һ待补ָ待补POST 待补˵㣬д S 待补
+ *                                       pets.<id>.anim待补Ч待补Ҽ待补˵待补һ待补£待补ã待补
+ *   /dsh-whale-girl/chat                 待补 待补Ի待补䣨GET 待补 / POST 待补Ի待补д memory.json待补
+ *                                       POST ֻ待补 {ok}待补ظ待补ͬ待补д S 待补 pets.<id>.say待补
+ *   /dsh-whale-girl/font|pic             待补 待补 / ֪ͨͼ待补ز待补
+ *
+ * ϵͳ֪ͨ待补ڳ待补Ϊ待补ľ待补ʵ待补ǣ待补 notify.ts 待补 connection 待补¼待补
+ * 待补api.events.mux/host待补 DSH 待补¼待补 DSH 0.1.5 待补ɾ待补¼待补 API待补֪ͨ待补Ϊ
+ * host 待补¼待补session/event + agent/error待补֡д待补 S 待补 sections.notify待补
+ * 待补ͳһ待补ѯ /state 待补 toast待补֡待补Լ待补 shared/notify.ts һ待补£待补ۣ待补·待补 pushNotifyFrame待补
+ *
+ * 待补ģʽ待补Electron ͸待补û待补ж待补ļ待补ʾ待补ȫ待补ɳ待补Ŀ待补 display 待补
+ * 待补web=待补 / desktop=待补 / both=待补 / none=待补ʾ待补ȱʧʱ待补ϲ待补Ĭ待补ֵ待补
+ *
+ * 待补ȫ待补ԣ待补resolveAsset 待补"待补Խ"У待补飬待补֤·待补ڶ待补Ӧ待补Ŀ¼待补ڣ待补
+ *         PUT 待补澭 saveUserConfig 待补ؽ待补id 待补ļ待补Ƿ待补ַ待补
+ *
+ * TODO(待补)待补peer 待补Ͱ待补ݲ待补ɽ待补ctx/req/res 待补 any待补
+ *             待补ɽ待补滻Ϊ DSH 待补ٷ待补͡待补
+ */
+import { createReadStream, existsSync, fstatSync, readFileSync } from 'node:fs';
+import { appendFile, readdir, readFile, mkdir, unlink, writeFile } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { homedir } from 'node:os';
+import { join, normalize, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths';
+import { credentialRef } from '@deepseek-ai/dsh-credentials';
+import { queryBalance } from './balance/index';
+import type { AccountBalanceSnapshot } from './balance/types';
+import { generateWhisper } from './whisper';
+import { generateChat, type ChatMemoryMessage } from './chat';
+import { configuredModel } from './model-selection';
+import { limitPool, pickMeme, readMemePool } from './memes';
+import { decideBroadcast, normalizeBroadcastText } from './broadcast';
+import { decideAnim } from './anim';
+import { decodeAudioBase64, synthesize, transcribe, disposeVoiceWorkers, DEFAULT_VOICE, DEFAULT_RATE } from './voice';
+import { captureFrames, captureScreen, frameDiff, saveSnapshot, snapshotUsage, SIGHT_DIR } from './sight';
+import { frameCaption, framePlan, shouldLookAtScreen } from './voice-vision';
+import { intentReply, parseVoiceIntent } from './voice-intent';
+import { DEFAULT_APP_ALIASES, findWindow, focusWindow, listWindows, openApp, runCommand } from './computer';
+import { lookAtScreen, parseSightReply, type SightMode } from './vision-llm';
+import {
+  DEFAULT_AUTOPLAY_CONFIG,
+  normalizeAutoplayConfig,
+  parseActionPlan,
+  runAutoplayRound,
+  type AutoplayConfig,
+  type AutoplayRound,
+} from './autoplay';
+import { createEstop } from './estop';
+import { createSkill, matchSkill, pruneSkills, scoreSkill, type Skill } from './game-skill';
+import { compressSession, createGameSession, recordStep, recentContext, shouldCompress, GENRE_MEMORY_CAP, type GameSession } from './game-memory';
+import { normalizeProfile, profileBrief, profileIdFromTitle, type GameProfile } from './game-profile';
+import { searchGuide, shouldSearchGuide } from './game-guide';
+import { createTaskSession } from './dsh-session';
+import { DEFAULT_TASK_CONFIG, advanceTaskState, createTaskState, parseTaskDone, shouldGiveUp, taskPrompt } from './task-loop';
+import { routeTask, type SelfAction } from './task-router';
+import { describePending, isCancel, isConfirm, isExpired, planSend, type PendingMessage } from './messaging';
+import { foregroundWindowTitle, performInput } from './input';
+import {
+  DEFAULT_SIGHT_CONFIG,
+  nextSightDelayMs,
+  normalizeSightConfig,
+  runSightRound,
+  type SightConfig,
+  type SightRound,
+} from './sight-runner';
+import {
+  configVersion,
+  findPetInstance,
+  flattenPetList,
+  ID_FORBIDDEN,
+  migrateUserConfig,
+  PET_DISPLAY_SET,
+  readAllConfig,
+  readPetConfigEntry,
+  readUserConfig,
+  saveUserConfig,
+  sliceMemoryRounds,
+  syncUserConfigFromDefault,
+  userConfigUnparsable,
+  type ConfigPaths,
+} from './config';
+import {
+  GOAL_UPDATE_TOOL,
+  reduceWorkStatus,
+  currentTaskFromTodo,
+  goalUpdateAction,
+  WorkStatusStore,
+  type WorkStatusTurnContext,
+} from './work-status';
+import {
+  agentErrorFrame,
+  hasBlockingActivity,
+  isCompletionTurnEnd,
+  reduceNotifyFrame,
+  sessionIdOf,
+  shouldNotifySession,
+  type HostNotifyFrame,
+} from './notify-events';
+import { profileNameFrom, storageEntries } from './storage-paths';
+import { PollStateStore } from './state';
+import { timeContextOf } from './time-context';
+import {
+  HelperProcess,
+  defaultElectronExe,
+  electronLandingDir,
+  ensureElectronDownload,
+  hasGraphicalDisplay,
+  resolveElectronPath,
+} from './helper-process';
+
+/** 待补 id待补 cordis.patch.yml һ待补£待补 */
+export const name = 'dsh-whale-girl';
+/** 待补Ҫע待补ķ待补webServer待补·待补ɣ待补+ agentDefaultModel待补ǰ待补̣待补+ credentials待补ƾ֤待补+ llm待补Ի待补ģ待补͵待补ã待补+ commands待补/balance б待补+ connection待补 Helper待补վ待补õ待补Ѽ待补Ȩվ待补 URL待补 */
+export const inject = ['webServer', 'agentDefaultModel', 'credentials', 'llm', 'commands', 'connection'];
+
+/** 待补Ŀ¼待补λ待补 lib/待补һ待补 */
+const PACKAGE_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+
+/** 待补 assets 待补 */
+const PACKAGE_ROOT_ASSETS = join(PACKAGE_ROOT, 'assets');
+
+/** 待补ڱ待补Ŀ¼待补ص待补һ待补assets/memes/<待补>.png待补 */
+const PACKAGE_MEMES_DIR = join(PACKAGE_ROOT_ASSETS, 'memes');
+
+/** ·待补ǰ׺ */
+const ROUTE_PREFIX = '/dsh-whale-girl';
+
+/**
+ * 待补ǲ待补 **DSH 待补Ӧ待补**待补Electron 待补
+ *
+ * 待补о待补ֻ待补 `process.versions.electron`待补Ӧ待补 `ELECTRON_RUN_AS_NODE=1` 待补 dsh.cmd待补
+ * 待补ֶ待补ڣ待补 `dsh web` / 待补ģʽ待补Ǵ待补 Node 待补̣待补ȡ待补ݴ˰ѡ待补վ待补Զ待补ɣ待补
+ * 待补 待补 待补Ӧ待补ô待补ڣ待补helper 待补 `dsh://open`待补 待补 待补վ待补㡣
+ */
+const isDesktopHost = (): boolean => Boolean(process.versions.electron);
+
+/** 待补ͬ待补չ待补Ӧ待补 Content-Type ӳ待补 */
+const MIME: Record<string, string> = {
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mp4': 'video/mp4',
+  '.png': 'image/png',
+  '.json': 'application/json; charset=utf-8',
+  '.jsonc': 'application/json; charset=utf-8',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+/**
+ * 待补淶待补У待补·待补ȷ待补 assets 待补Ŀ¼待补ڣ待补·待补Խ待补
+ * @returns 待补淶待补ľ待补ļ待补·待补Ƿ待补Խ待补ʱ待补 undefined
+ */
+function resolveAsset(root: string, rel: string): string | undefined {
+  if (rel.length === 0) return undefined;
+  const candidate = normalize(join(root, rel));
+  const rootWithSep = root.endsWith(sep) ? root : root + sep;
+  if (candidate !== root && !candidate.startsWith(rootWithSep)) return undefined;
+  return candidate;
+}
+
+/** 待补 root 待补½待补ȷ待补ʵ待补ڣ待补Ƿ待补Խ待补򲻴待补ʱ待补 undefined */
+function resolveExisting(root: string, rel: string): string | undefined {
+  const candidate = resolveAsset(root, rel);
+  return candidate && existsSync(candidate) ? candidate : undefined;
+}
+
+/**
+ * 待补ʽ待补һ待补ļ待补 Content-Type / 待补 / 待补ͷ待补
+ *
+ * Content-Length 待补ȡ待补**待补ڶ待补Ǹ待补 fd**待补open 待补¼待补 fstat待补 stat 待补û待补
+ * $DSH_HOME/dsh-whale-girl/main-animation/webm/ 待补ƻ待补ͬ待补ز待补ʱ待补stat 待补ʼ待补֮待补ļ待补ᱻ待补ض待补/
+ * 待补д待补һ待补ʵ待补ֽ待补ĳ待补ȣ待补Ӧ待补**待补Զ待补Ҳ待补**待补Ϊ stalled待补
+ * 待补Ƶ loadeddata 待补 error待补 issue #62 待补ֳ待补"待补ݶϹ待补"待补һ待补ֳ待补ͬһ待补 fd 待补
+ * fstat 待补õ待补Ĵ待补С待补ֽ待补Ȼһ待补¡待补
+ */
+function sendFile(res: ServerResponse, file: string, contentType: string): void {
+  const stream = createReadStream(file);
+  stream.once('open', (fd) => {
+    if (res.destroyed || res.writableEnded) {
+      stream.destroy(); // 待补ͻ待补ڿ待补ǰ待补ͷ待补
+      return;
+    }
+    try {
+      res.writeHead(200, {
+        'content-type': contentType,
+        'content-length': fstatSync(fd).size,
+        'cache-control': 'public, max-age=3600',
+      });
+    } catch {
+      // 待补 fstat 待补ò待补ͷ待补 Node 待补 chunked 待补β待补Ȼһ待补£待补ֻ待补û待补
+      res.writeHead(200, { 'content-type': contentType, 'cache-control': 'public, max-age=3600' });
+    }
+    stream.pipe(res);
+  });
+  // 待补ʧ待补ܣ待补ļ待补ɾ/Ȩ待补/待补ռ待补ã待补ֱ待补Ӷ待补ÿͻ待补̿待补ʧ待补ܣ待补޵ȴ待补
+  stream.on('error', () => res.destroy());
+  // 待补ͻ待补ǰ待补Ͽ待补ж待补ʱ待补Ƶ待补 ͣ待补ļ待补
+  res.on('close', () => stream.destroy());
+}
+
+// 待补õĶ待补ȡ/У待补/待补ϲ待补/待补ȫ待补 ./config待补readAllConfig / saveUserConfig待补host 待补԰待补ʵ待补֣待补
+// 待补 import src/shared 待补 DSH 待补ļ待补Լ待补ļ待补ٱ待补κ待补߼待补ֻ待补ѳ待补Ʒ待补ֵ待补
+
+/** 待补ó待补Ƿ待补ģʽ待补Electron ͸待补 */
+const isDesktopVisible = (display: unknown): boolean => display === 'desktop' || display === 'both';
+
+/** 待补 JSON 待补Ӧ待补headers 待补ѡ待补 no-cache 待补 */
+function sendJson(res: ServerResponse, status: number, obj: unknown, headers: Record<string, string> = {}): void {
+  const body = JSON.stringify(obj);
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(body),
+    ...headers,
+  });
+  res.end(body);
+}
+
+/** 待补ʹ待补ı待补Ӧ待补ز待补 404/400 待补ʽ待补İ待补 */
+function sendText(res: ServerResponse, status: number, body: string): void {
+  res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8' });
+  res.end(body);
+}
+
+/**
+ * 待补Ͷ待补Ӧ待补ϳɵ待补 MP3待补
+ *
+ * ֻ待补 HTTP待补 Helper 待补 bridge 待补ܵ待补 JSON 待补Э待补飬待补˶待补Ƶ待补
+ * 待补洰待补 `/voice/tts` 待补 HTTP 待补˵㣨待补뱾待补 127.0.0.1 ͬԴ待补 bridge待补
+ */
+function sendBuffer(res: ServerResponse, status: number, body: Uint8Array, contentType: string): void {
+  const buf = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  res.writeHead(status, {
+    'content-type': contentType,
+    'content-length': buf.length,
+    // ͬһ待补ı待补ϳɽ待补ɻ待补棬待补һ待补Եģ待补ô待补/待补̫待补
+    'cache-control': 'no-store',
+  });
+  res.end(buf);
+}
+
+/** 待补ҵ待补·待补ɵ待补Ӧ待补WebServer ע待补 Helper 待补ܵ待补õ待补ͬһ待补Լ待补ѷ待补̣待补 */
+type RouteResult =
+  | { kind: 'json'; status: number; obj: unknown; headers?: Record<string, string> }
+  | { kind: 'text'; status: number; body: string }
+  | { kind: 'file'; file: string; contentType: string }
+  | { kind: 'buffer'; status: number; body: Uint8Array; contentType: string };
+
+/** 待补ռ待补壨待补ı待补 */
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve2, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (c: Buffer) => chunks.push(c));
+    req.on('end', () => resolve2(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 待补pet pack待补˵待补У待补/ɨ待补 ./config待补readAllConfig 待补ڲ待补ֶκϲ待补
+// 待补ﲻ待补 host 待补࿽待补ļ待补һ待补ͳһ待补 readAllConfig 待补ĳ待补Ʒ待补ȡ待补
+// ---------------------------------------------------------------------------
+
+/** 待补壺ע待补 `/dsh-whale-girl` ǰ׺·待补 + б待补/balance /pet /chat待补 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DSH ע待补 ctx待补webServer/locale 待补 service 待补޾待补̬待补ͣ待补
+export function apply(ctx: any): void {
+  // 待补û待补ݸ待补û待补ز待补ͳһ待补ڴˣ待补չ待补 <待补id> 待补Խ待补Ŀ¼待补
+  const dshHome = resolveDshHome();
+  const userRoot = join(dshHome, 'dsh-whale-girl');
+  // 待补û待补ã待补ɱ༭待补㣩待补ļ待补Ŀ¼待补ö待补ȡ/待补ϲ待补ͳһ待补 readAllConfig待补./config待补
+  // 待补 **JSONC**待补main-config.jsonc待补Ĭ待补 config.jsonc ͬ待补ͬ待补ʽ待补
+  // 待补ͬ待补д待补ȥ待补ľ待补Ǵ待补ע待补͵待补ԭ待补ģ待补չ待补ʵ待补ӳ待补ݣ待补ɰ待补 main-config.json ֻ待补 + 待补Ǩ待补ƣ待补
+  const userConfigPath = join(userRoot, 'main-config.jsonc');
+  const legacyUserConfigPath = join(userRoot, 'main-config.json');
+  const petConfigDir = join(userRoot, 'pet');
+  // 待补·待补readAllConfig 待补Ψһ待补룺待补Ĭ待补 + 待补û待补 + 待补ļ待补Ŀ¼待补
+  const configPaths: ConfigPaths = {
+    defaultFile: join(PACKAGE_ROOT, 'assets', 'config.jsonc'),
+    userFile: userConfigPath,
+    legacyUserFile: legacyUserConfigPath,
+    petDir: petConfigDir,
+  };
+  // 待补û待补һ待补Ǩ待补ƣ待补main-config.json 待补 main-config.jsonc待补һ待补ֲ待补
+  // 待补ļ待补Ѵ待补򲻶待补ļ待补ʧ待补ܲ待补Ӱ待补С待补ȡ待补Ծ待补·待补л待补䡣
+  migrateUserConfig(configPaths, (msg) => console.log('[dsh-whale-girl] ' + msg));
+  // 待补û待补Ŀ¼待补thumb 待补ʱ待补ڰ待补زģ待补webm 待补 main-animation/webm/待补mov待补macOS 待补ƣ待补 main-animation/mov/待补
+  const thumbUserRoot = join(userRoot, 'main-animation');
+  // 待补û待补Ŀ¼待补/待补Ի待补ͼ待补ͼƬ待补ڰ待补 assets/memes待补ͼ待补ظİ待补
+  const memesUserRoot = join(userRoot, 'memes');
+
+  // 待补 待补ʶ待补Ļ待补待补
+  // 待补õ待补 sight.json待补ý待补待补Ǳ待补У待补ϸ待补ֻ待补ǣ待补壩待补
+  // Ĭ待补**待补**待补ͼ待补
+  const sightConfigPath = join(userRoot, 'sight.json');
+  const sightSnapshotsRoot = join(userRoot, SIGHT_DIR);
+  const readSightConfig = (): SightConfig => {
+    try {
+      const raw = JSON.parse(readFileSync(sightConfigPath, 'utf8')) as Partial<SightConfig>;
+      return normalizeSightConfig(raw);
+    } catch {
+      // 待补ļ待补 / 待补ǺϷ待补 JSON待补Ĭ待补ϣ待补أ待补
+      return { ...DEFAULT_SIGHT_CONFIG };
+    }
+  };
+  /** 待补ִε待补ʶ待补״̬待补һ֡待补֡待补待补һ待补仰待补ȥ待补أ待补 */
+  const sightState: { lastJpeg?: Uint8Array; lastReply: string } = { lastReply: '' };
+
+  // 待补 待补򣨿待补Ļ 待补 待补һ待补 待补 待补֣待补
+  // 待补õ待补 autoplay.json待补/待补/ʶ待补
+  // **Ĭ待补Ϲر待补 + 待补**待补Ҫ待补ʽ待补򿪡待补ʽ待补ص待补ܣ待补Ż待补İ待补
+  const autoplayConfigPath = join(userRoot, 'autoplay.json');
+  const readAutoplayConfig = (): AutoplayConfig => {
+    try {
+      return normalizeAutoplayConfig(JSON.parse(readFileSync(autoplayConfigPath, 'utf8')) as Partial<AutoplayConfig>);
+    } catch {
+      return { ...DEFAULT_AUTOPLAY_CONFIG };
+    }
+  };
+
+  /**
+   * 待补õļ待补ͣ待补
+   *
+   * 待补ڸ待补Ų待补ñ待补ʱ待补ؽ待补ȼ待补Ҫ待补
+   * ж待补ʱͣ待补̣待补һ待补¶待补 PowerShell һֱ待补ѯ待补
+   */
+  let autoplayEstop = createEstop(readAutoplayConfig().estopKey);
+  let stopEstopWatcher: (() => void) | undefined;
+
+  /** 待补ؽ待补ͣ待补ñ待补ã待补 */
+  const rearmAutoplay = async (config: AutoplayConfig): Promise<void> => {
+    stopEstopWatcher?.();
+    stopEstopWatcher = undefined;
+    autoplayEstop = createEstop(config.estopKey, (reason) => {
+      console.warn(`[dsh-whale-girl] 待补ͣ待补${reason}`);
+    });
+    // ֻ待补ڡ待补ʱ待补ŵ待补ʱ待补û待补Ҫ待补פһ待补ѯ待补
+    if (config.enabled) {
+      stopEstopWatcher = autoplayEstop.startWatching();
+    }
+  };
+
+  /**
+   * 待补һ待补ִ待补
+   *
+   * 待补и待补ö待补һ待补ע待补룬待补պ󵥲⣻待补߼待补 autoplay.ts待补
+   */
+  /**
+   * 待补ʶͼ待补ĸ待补ģ待补͡待补
+   *
+   * ˳待补򣺵待补ָ待补 待补 **待补ó待补õ待补 chatModel** 待补 待补Ựʵ待补ģ待补͡待补
+   *
+   * Ϊʲô待补м待补ǻ待补ã待补ڡ待补AI 待补ҳ待补ѡ待补Ի待补ģ待补͵ģ待补
+   * 待补Ǹ待补ֵ待补 `main-config.jsonc` 待补 `chatModel`待补**待补 sight.json 待补**待补
+   * 待补 sight.json待补û待补 chatModel待补һ·待补䵽待补Ựʵ待补ģ待补͡待补
+   * 待补־待补ǡ待补ģ待补ͣ待补Ļ待补ʾ待补ɵġ待补
+   */
+  const resolveVisionModel = (
+    override?: { provider: string; model: string },
+  ): { provider: string; model: string } | undefined => {
+    if (override !== undefined) return override;
+    try {
+      const cfg = readAllConfig(configPaths);
+      const petId = resolveActivePetId();
+      const found = findPetInstance(cfg, petId);
+      const conf = found ? found.conf : (cfg.main ?? {});
+      const configured = configuredModel(conf, 'chatModel');
+      if (configured !== undefined) return configured;
+    } catch {
+      /* 待补ö待补»待补 */
+    }
+    return resolveCurrentModel();
+  };
+
+  /**
+   * 待补ȫȡ attachments 待补
+   *
+   * 待补**待补ڱ待补 inject 待补б待补**待补ֱ待补д `ctx.attachments` 待补ᱻ cordis 待补
+   * 待补cannot get property "attachments" without inject待补ʵ待补 500 待补
+   * 待补ȡ待补û待补оͷ待补 undefined待补÷待补á待补
+   * 待补·待补ɱ待补
+   */
+  const getAttachments = (): {
+    saveImages: Parameters<typeof lookAtScreen>[0]['attachments']['saveImages'];
+  } | undefined => {
+    try {
+      return ctx.get('attachments', false) as ReturnType<typeof getAttachments>;
+    } catch {
+      return undefined;
+    }
+  };
+
+  /**
+   * 待补õļ待补ܿ待补 + 待补һ֡/待补һ待补
+   *
+   * 待补ֻ待补ڡ待补漸待补û待补䡹ʱ待补ã待补һ待补䣬֮ǰ待补Ǿ待补Ͳ待补ٶ待补Ӧ待补ڵ待补Ļ待补
+   * Ӳ待补׼待补ܻ待补ڴ待补󳡾待补
+   */
+  // 待补 待补Ϸ待补 + 待补ֻỰ 待补
+  // 待补 `games/<id>.json`待补ÿ待补Ϸһ待补ݣ待补λ待补Ҫ待补㡢待补Ի待补棩
+  const appsPath = join(userRoot, 'apps.json');
+  /** 待补û待补Զ待补ñ待补ϲ待补û待补Ŀ待补ȣ待补 */
+  const readAppAliases = (): Record<string, string> => {
+    let user: Record<string, string> = {};
+    try {
+      const raw = JSON.parse(readFileSync(appsPath, 'utf8')) as unknown;
+      if (raw !== null && typeof raw === 'object') {
+        for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+          if (typeof v === 'string' && k.trim() !== '' && v.trim() !== '') user[k] = v;
+        }
+      }
+    } catch {
+      /* û待补о待补ñ待补 */
+    }
+    return { ...DEFAULT_APP_ALIASES, ...user };
+  };
+
+  const gamesRoot = join(userRoot, 'games');
+  /** 待补Ϸ待补Ự待补ʱ待补࣬待补˳待补ʱѹ待补һ待补ժҪд待补ع待补ü待补䣩 */
+  let autoplaySession: GameSession | undefined;
+  /** 待补õ待补Ϸ待补ܵ待补ʱ待补ƴ待补ʾ待补ʣ待补 */
+  let currentGame: GameProfile | undefined;
+  /** 待补ȷ待补ϵķ待补ȷ待补Ϻ待补Ű待补 */
+  let pendingMessage: PendingMessage | undefined;
+  /** 待补ס待补֣待补noop / 待补ʧ待补 / 待补ܣ待补ֵ待补Լ待补鹥待补 */
+  let autoplayStuck = 0;
+  /** 待补ϴ待补Զ待补鹥待补Ե待补ʱ待补䣨待补ȴ待补ã待补 */
+  let autoplayLastSearchAt: number | undefined;
+
+  const readGames = async (): Promise<GameProfile[]> => {
+    try {
+      const names = (await readdir(gamesRoot)).filter((n) => n.endsWith('.json'));
+      const out: GameProfile[] = [];
+      for (const name of names) {
+        try {
+          const parsed = normalizeProfile(JSON.parse(readFileSync(join(gamesRoot, name), 'utf8')) as Partial<GameProfile>);
+          out.push(parsed);
+        } catch {
+          /* 待补ݻ待补Ӱ待补 */
+        }
+      }
+      return out.sort((a, b) => a.title.localeCompare(b.title));
+    } catch {
+      return [];
+    }
+  };
+
+  const writeGame = async (profile: GameProfile): Promise<void> => {
+    await mkdir(gamesRoot, { recursive: true });
+    await writeFile(join(gamesRoot, profile.id + '.json'), JSON.stringify(profile, null, 2) + '\n', 'utf8');
+  };
+
+  /**
+   * 待补֣待补ѻỰѹ待补һ待补ժҪд待补**待补ü待补**待补Ȼ待补ջ待补塣
+   *
+   * 待补Ҫ待补󡸼待补乲待补һ待补ݣ待补ֻ待补ʱ待补Ŵ󡹡待补ﲻ待补Ǵ浽待补һ待补ط待补
+   * 待补ѹ待补һ待补 assistant ע待补 memory.json待补ڼ待补һ待补ߡ待补
+   */
+  const endAutoplaySession = async (): Promise<{ steps: number; summary: string } | undefined> => {
+    const session = autoplaySession;
+    if (session === undefined || !shouldCompress(session)) {
+      autoplaySession = undefined;
+      return undefined;
+    }
+    const petId = resolveActivePetId();
+    let target = 5;
+    try {
+      const cfg = readAllConfig(configPaths);
+      target = memoryRounds(petId, cfg);
+    } catch {
+      /* 待补þ待补Ĭ待补 */
+    }
+    const summary = compressSession(session, target);
+    try {
+      const mem = await readMemory();
+      const cfg = readAllConfig(configPaths);
+      const found = findPetInstance(cfg, petId);
+      const entryKey = found ? found.entry : 'main';
+      const bucket = (mem[entryKey] ??= {});
+      const record = (bucket[petId] ??= { messages: [] });
+      record.messages.push({ role: 'assistant', content: summary, ts: Date.now() });
+      const keep = Math.max(0, target) * 2;
+      if (keep > 0 && record.messages.length > keep) record.messages = record.messages.slice(-keep);
+      await writeMemory(mem);
+    } catch (e) {
+      console.warn('[dsh-whale-girl] 待补д待补ʧ待补ܣ待补' + (e instanceof Error ? e.message : String(e)));
+    }
+    const steps = session.steps.length;
+    autoplaySession = undefined;
+    return { steps, summary };
+  };
+
+  const autoplaySkills: Skill[] = [];
+  let autoplayLastJpeg: Uint8Array | undefined;
+  let autoplayLastDesc = '';
+
+  const runAutoplayOnce = async (config: AutoplayConfig): Promise<AutoplayRound> => {
+    const visionModel = resolveVisionModel();
+    // 待补ֻỰ待补һ待补ʱ待补Ϸ待补͸待补ǡ待补Ϸʱ待补Ŵ󡹵待补㣩
+    if (autoplaySession === undefined) {
+      const games = await readGames();
+      const game = games[0];
+      // 待补Դ待补Զ待补 > 待补Ԥ待补 > 待补
+      const cap =
+        game?.memoryCap ??
+        (game === undefined ? GENRE_MEMORY_CAP.custom : (GENRE_MEMORY_CAP[game.genre] ?? GENRE_MEMORY_CAP.custom));
+      autoplaySession = createGameSession(game?.title ?? 'δָ待补Ϸ', cap);
+      currentGame = game;
+    }
+    const round = await runAutoplayRound(
+      {
+        capture: async () => {
+          const shot = await captureScreen();
+          const b64 = shot.dataUrl.split(',')[1] ?? '';
+          const jpeg = Uint8Array.from(Buffer.from(b64, 'base64'));
+          autoplayLastJpeg = jpeg;
+          return { jpeg, width: shot.width, height: shot.height };
+        },
+        describe: async (jpeg: Uint8Array) => {
+          if (visionModel === undefined) return { ok: false as const, message: 'û待补п待补õ待补ģ待补' };
+          // watch ģʽ待补ֻ待补͹待补棬待补˵待补
+          const attachments = getAttachments();
+          if (attachments === undefined) {
+            return { ok: false as const, message: '待补񲻿待补ã待补޷待补ͼƬ待补ģ待补ͣ待补' };
+          }
+          const result = await lookAtScreen(
+            { llm: ctx.llm, attachments },
+            jpeg,
+            visionModel,
+            'watch',
+            '待补ʲô待补ָ待补ʽֻ待补һ待补ж待补',
+            (refs) => {
+              void purgeAttachmentObjects(ctx, refs);
+            },
+          );
+          return result.ok ? { ok: true as const, text: result.text } : { ok: false as const, message: result.message };
+        },
+        perform: async (action) => {
+          const result = await performInput(action, {
+            allowedTitles: config.windowTitles,
+          });
+          return result.ok ? { ok: true as const } : { ok: false as const, message: result.message };
+        },
+        foregroundTitle: () => foregroundWindowTitle(),
+        log: (message: string) => console.log('[dsh-whale-girl] ' + message),
+        /** 待补ܿ待补·待补ֻ待补ڻ待补漸待补û待补䣨<2%待补ʱ待补ã待补¿待补 */
+        trySkill: (jpeg: Uint8Array) => {
+          if (autoplayLastJpeg === undefined || autoplayLastDesc === '') return undefined;
+          const changed = frameDiff(autoplayLastJpeg, jpeg);
+          if (changed >= 0.02) return undefined;
+          const hit = matchSkill(autoplaySkills, autoplayLastDesc);
+          return hit === undefined ? undefined : { name: hit.name, actions: hit.actions };
+        },
+        /** ѧһ待补 / 待补ս待补 */
+        learnSkill: (description: string, actions, ok: boolean) => {
+          autoplayLastDesc = description;
+          const existing = autoplaySkills.find((s) => s.name === description && s.actions.length === actions.length);
+          if (existing !== undefined) {
+            scoreSkill(existing, ok);
+            const kept = pruneSkills(autoplaySkills);
+            autoplaySkills.length = 0;
+            autoplaySkills.push(...kept);
+            return;
+          }
+          if (!ok) return; // û待补ɹ待补Ĳ待补
+          const created = createSkill(description, actions, autoplaySkills);
+          if (created !== undefined) autoplaySkills.push(created);
+          const kept = pruneSkills(autoplaySkills);
+          autoplaySkills.length = 0;
+          autoplaySkills.push(...kept);
+        },
+      },
+      {
+        dryRun: config.dryRun,
+        allowedTitles: config.windowTitles,
+        // 待补Ϸ待补ô待补棩+ 待补ս待补ղ待补ʲô待补ģ待补Ϳ待补֪待补ð待补ʲô
+        gameContext: [profileBrief(currentGame ?? normalizeProfile({ title: 'δָ待补Ϸ' })), recentContext(autoplaySession ?? createGameSession('', 1), 12)]
+          .filter((x) => x !== '')
+          .join('\n'),
+      },
+      autoplayEstop,
+    );
+
+    // 待补ǵ待补ֻỰ待补Ϸ待补ͷŴ待补˳待补ʱѹ待补ع待补ü待补䣩
+    if (autoplaySession !== undefined) {
+      if (round.kind === 'planned') {
+        recordStep(autoplaySession, {
+          at: Date.now(),
+          screen: round.thought,
+          plan: round.thought,
+          executed: round.executed,
+          outcome: round.executed ? 'ok' : 'rejected',
+        });
+      } else if (round.kind === 'stopped') {
+        recordStep(autoplaySession, {
+          at: Date.now(),
+          screen: '待补ͣ',
+          plan: 'ֹͣ待补',
+          executed: false,
+          outcome: 'stopped',
+        });
+      }
+    }
+    // 待补ס待补 + 待补鹥待补
+    if (round.kind === 'planned' && round.executed) {
+      autoplayStuck = 0; // 待补ͨһ待补͹待补
+    } else if (
+      (round.kind === 'skipped' && (round.reason === 'model-noop' || round.reason === 'unparseable')) ||
+      (round.kind === 'failed' && round.reason === 'inject')
+    ) {
+      autoplayStuck++;
+    }
+
+    // 待补ſ待补ס 待补 待补Լ待补һ待补ι待补ԣ待补д待补һ待补־ͻ待补ʾ待补ʣ待补
+    if (
+      currentGame !== undefined &&
+      shouldSearchGuide({
+        stuckRounds: autoplayStuck,
+        hasGuide: currentGame.guide !== undefined,
+        ...(autoplayLastSearchAt === undefined ? {} : { lastSearchAt: autoplayLastSearchAt }),
+      })
+    ) {
+      autoplayStuck = 0;
+      autoplayLastSearchAt = Date.now();
+      console.log('[dsh-whale-girl] 待补ס待补Լ待补鹥待补ԣ待补' + currentGame.title);
+      const web = ctx.get('web', false) as Parameters<typeof searchGuide>[0];
+      const found = await searchGuide(web, currentGame.title);
+      if (found.ok) {
+        currentGame = normalizeProfile({
+          ...currentGame,
+          guide: { query: found.query, summary: found.summary, sources: found.sources, atMs: found.atMs },
+        });
+        await writeGame(currentGame);
+      }
+    }
+
+    return round;
+  };
+
+  /**
+   * 待补һ待补ʶ待补Ļ 待补 待补ж待补ֵ待补ֵ待补˵ 待补 д待补 `say` Ҷ待补ӣ待补 / 待补ѡ待补
+   *
+   * 待补**Ψһ**待补س待补ڣ待补ֶ待补POST /sight/run待补Ͷ待补ʱ待补
+   * 待补֤待补·待补Ϊ待补ȫһ待补£待补֡待补ֶ待补˵待补ʱ待补˵待补Ư待补ơ待补
+   */
+  /**
+   * ɾ待补ղ待补Ϊ待补ͼ待补ʱд待补µĸ待补󣨡待补ؼ待补١待补
+   *
+   * ΪʲôҪ待补ô待补DSH 待补ͼƬ待补Ϣֻ待补ܳ待补 `ImageAttachmentRef`待补洢
+   * **ֻ待补ʵ待补**待补`writeFile` + `link` 待补 `objects/<sha256>`待补ȫ待补û待补ڴ待补ģʽ待补
+   * 待补˽待补ܡ待补Լ 1 待补롹待补Ҫ待补**待补ɾ**待补
+   *
+   * ע待补⣺·待补Ѱַ待补ģ待补`objects/<sha256 ǰ2λ>/<sha256>`待补ɾ֮ǰ待补ȷ待补
+   * 待补ȷʵ待补д待补Ƿݣ待补ɾ待补ʧ待补ֻ待补־待补Ӱ待补Ի待补
+   */
+  const purgeAttachmentObjects = async (
+    context: unknown,
+    refs: Array<{ attachmentId?: string }>,
+  ): Promise<void> => {
+    if (refs.length === 0) return;
+    try {
+      // 待补Ŀ¼待补 DSH 待补ٷ待补Ƶ待补$DSH_HOME/attachments/v1/objects/<xx>/<sha256>
+      const attachments = (context as { attachments?: { root?: string } }).attachments;
+      // 待补¶·待补һ待补 DSH_HOME ƴ待补 observed-model.json ͬԴ待补
+      const root = attachments?.root ?? join(dshHome, 'attachments', 'v1', 'objects');
+      for (const ref of refs) {
+        const id = typeof ref.attachmentId === 'string' ? ref.attachmentId : '';
+        if (id === '') continue;
+        // attachmentId 待补 sha256待补Ѱַ待补ȡǰ待补λ待补Ͱ
+        const file = join(root, id.slice(0, 2), id);
+        try {
+          await unlink(file);
+        } catch {
+          /* 待补Ѿ待补 / 待补ĻỰ待补 待补 待补 */
+        }
+      }
+    } catch {
+      /* 待补Ǿ待补Ϊ待补ʧ待补ܲ待补ʶ待补 */
+    }
+  };
+
+  /**
+   * ִ待补һ待补ָ待补
+   *
+   * 待补Ҫ待补Ļ待补 undefined = 待补ͼ待补ǰ待补ã待补Ի待补ף待补
+   *
+   * ע待补⣺待补**待补ƹ待补κΰ待补ȫբ**待补ߵ待补Ǻ待补ҳͬһ待补д待补̣待补
+   * 待补Ȼ待补ܼ待补ͣ待补봰待补ڰ待补Լ待补ֻ待补"待补һֻ待补ְ待补ͬһ待补ť"待补
+   */
+  const runVoiceIntent = async (intent: ReturnType<typeof parseVoiceIntent>, petId: string): Promise<string | undefined> => {
+    if (intent === undefined) return undefined;
+    try {
+      switch (intent.kind) {
+        case 'stop-now': {
+          autoplayEstop.stop('manual');
+          return intentReply(intent);
+        }
+        case 'end-session': {
+          const ended = await endAutoplaySession();
+          if (ended === undefined) return '待补ֻ待补û待补ʼ待补ء待补';
+          return ended.summary;
+        }
+        case 'toggle-sight': {
+          const current = readSightConfig();
+          const next = { ...current, enabled: intent.on ?? !current.enabled };
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          armSightTimer();
+          return intentReply({ ...intent, on: next.enabled });
+        }
+        case 'toggle-autoplay': {
+          const current = readAutoplayConfig();
+          const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: intent.on ?? !current.enabled });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          await rearmAutoplay(next);
+          if (!next.enabled) await endAutoplaySession();
+          return intentReply({ ...intent, on: next.enabled });
+        }
+        case 'look-now': {
+          const round = await runSightOnce();
+          if (round.kind === 'spoke') return round.text;
+          if (round.kind === 'skipped') return '待补ûʲô待补˵待补ġ待补';
+          return 'û待补ɣ待补Ժ待补ԡ待补';
+        }
+        case 'status': {
+          const sightOn = readSightConfig().enabled;
+          const autoOn = readAutoplayConfig().enabled;
+          const steps = autoplaySession?.steps.length ?? 0;
+          return `ʶ待补${sightOn ? '待补' : '待补'}待补${autoOn ? '待补' : '待补'}待补ּ待补 ${steps} 待补`;
+        }
+        case 'open-app': {
+          // 待补 ctx.subprocess待补 DSH 待补Լ待补ͬһ待补ִ待补磩待补·待补
+          // Start-Process 待补ᰴ PATH / App Paths ע待补Լ待补ƴ·待补ɿ待补
+          void petId;
+          const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+          // 待补ȿ待补ǲ待补ѿ待补ŵĴ待补ڣ待补'待补Ⱥ待补'ͨ待补л待补ȥ待补
+          const wins = await listWindows(sub);
+          const hit = findWindow(wins, intent.target);
+          if (hit !== undefined) {
+            // 待补ѿ待补ž待补й待补ȥ待补"待补Ⱥ待补"ͨ待补л待补Ǹ待补ڣ待补ٿ待补һ待补
+            const focused = await focusWindow(sub, hit.pid);
+            return focused ? `待补е待补${hit.title}待补ˡ待补` : `待补${hit.title}待补ţ待补û待补й待补ȥ待补ϵͳ待补ã待补`;
+          }
+          const opened = await openApp(sub, intent.target, readAppAliases());
+          return opened.ok ? intentReply(intent) : `û待补${intent.target}待补${opened.message}`;
+        }
+        case 'search': {
+          const web = ctx.get('web', false) as Parameters<typeof searchGuide>[0];
+          const result = await searchGuide(web, intent.query, '');
+          if (!result.ok) return `û待补鵽待补${result.message}`;
+          return `待补鵽һЩ待补${result.summary.slice(0, 120)}待补`;
+        }
+      }
+    } catch (e) {
+      console.warn('[dsh-whale-girl] 待补ָ待补ִ待补ʧ待补ܣ待补' + (e instanceof Error ? e.message : String(e)));
+      return '待补ûִ待补гɹ待补';
+    }
+  };
+
+  /**
+   * ִ待补һ待补Լ待补Ķ待补
+   *
+   * 待补Ҫ待补Ļ待补undefined = 待补ǰ待补ˣ待补Ի待补ף待补
+   * 待补ʧ待补ܶ待补ʵ˵待补"待补õ待补ȥ待补"Ȼ待补ʲô待补û待补待补Ľ待补
+   */
+  const runSelfAction = async (action: SelfAction): Promise<string | undefined> => {
+    const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+    switch (action.do) {
+      case 'open-app': {
+        const wins = await listWindows(sub);
+        const hit = findWindow(wins, action.target);
+        if (hit !== undefined) {
+          const focused = await focusWindow(sub, hit.pid);
+          return focused ? `待补е待补${hit.title}待补ˡ待补` : `待补${hit.title}待补ţ待补û待补й待补ȥ待补`;
+        }
+        const opened = await openApp(sub, action.target, readAppAliases());
+        return opened.ok ? `待补ã待补${action.target}待补` : `û待补${action.target}待补${opened.message}`;
+      }
+      case 'focus-window': {
+        const wins = await listWindows(sub);
+        const hit = findWindow(wins, action.target);
+        if (hit === undefined) return `û待补ҵ待补${action.target}待补ڡ待补`;
+        const focused = await focusWindow(sub, hit.pid);
+        return focused ? `待补е待补${hit.title}待补ˡ待补` : `待补${hit.title}待补û待补й待补ȥ待补`;
+      }
+      case 'open-url': {
+        const r = await runCommand(sub, ['powershell.exe', '-NoProfile', '-Command', `Start-Process '${action.url.replace(/'/g, "''")}'`], { timeoutMs: 20000 });
+        return r.ok ? `待补ã待补 ${action.url}待补` : `待补򲻿待补ַ待补${r.message}`;
+      }
+      case 'search-web': {
+        // 待补 = 待补ϵͳĬ待补ҳ待补"待补һ待补ҳ待补ܽ待补"待补ö࣬Ҳ待补ֱ待补
+        const url = 'https://www.bing.com/search?q=' + encodeURIComponent(action.query);
+        const r = await runCommand(sub, ['powershell.exe', '-NoProfile', '-Command', `Start-Process '${url}'`], { timeoutMs: 20000 });
+        return r.ok ? `待补ã待补ѡ待补${action.query}待补` : `待补Ѳ待补ˣ待补${r.message}`;
+      }
+      case 'play-music': {
+        // û待补ͨ待补 API待补ʵ待补Ʋ待补
+        const wins = await listWindows(sub);
+        const netease = findWindow(wins, '待补') ?? findWindow(wins, 'cloudmusic');
+        if (netease !== undefined) {
+          const focused = await focusWindow(sub, netease.pid);
+          return focused ? `待补ƿ待补ţ待补ȥ待补ѡ待补${action.what}待补ɡ待补` : `待补û待补й待补ȥ待补`;
+        }
+        const opened = await openApp(sub, 'cloudmusic', readAppAliases());
+        if (!opened.ok) return `待补򲻿待补ƣ待补${opened.message}`;
+        // 待补֮待补**待补Լ待补ȥ待补Ҹ貥待补**待补ͨ待补ѭ待补ֶ待补ѡ待补
+        // 待补"待补Ϸģʽ待补待补"待补أ待补ͬһ待补׿待补Ļ待补ѭ待补
+        const run = await runTask(`待补ﲥ待补š待补${action.what}待补`, {
+          allowedTitles: ['待补', 'cloudmusic'],
+          maxSteps: 15,
+          dryRun: false,
+        });
+        return run.ok ? `待补ˣ待补${run.summary}` : `待补ƣ待补û待补Զ待补ţ待补${run.summary}待补`;
+      }
+      case 'send-message': {
+        // 待补Ȱ待补Ҫ待补Ķ待补ڳ待补ȷ待补ϣ待补**待补̰待补**待补
+        // 待补ϵ待补ǲ待补һ待补ƥ待补ˣ待补Ϣ待补˾待补ղ待补ˡ待补
+        pendingMessage = { app: action.app, to: action.to, text: action.text, at: Date.now() };
+        return describePending(pendingMessage);
+      }
+    }
+  };
+
+  /**
+   * ִ待补С待补ȷ待补Ϲ待补ˡ待补ķ待补ͣ待补
+   *
+   * ÿһ待补ʧ待补ܾ待补ͣ待补֣待补°待补Ϊ待补εİ待补䵽待补Ĵ待补
+   * 待补ǱȲ待补㡣待补ֻ待补߼待补塪待补SendKeys 待补򲻳待补ġ待补
+   */
+  const executePendingMessage = async (): Promise<string> => {
+    const pending = pendingMessage;
+    if (pending === undefined) return 'û待补д待补Ϣ待补';
+    if (isExpired(pending)) {
+      pendingMessage = undefined;
+      return '待补Ϣ待补̫待补ˣ待补Ѿ待补ϡ待补Ҫ待补Ļ待补ٸ待补˵һ待补Ρ待补';
+    }
+    pendingMessage = undefined;
+
+    const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+    const wins = await listWindows(sub);
+    const win = findWindow(wins, pending.app);
+    if (win === undefined) {
+      const opened = await openApp(sub, pending.app, readAppAliases());
+      if (!opened.ok) return `待补򲻿待补${pending.app}待补${opened.message}`;
+      await new Promise((r) => setTimeout(r, 2500)); // 待补
+    } else {
+      const focused = await focusWindow(sub, win.pid);
+      if (!focused) return `û待补${pending.app}待补е待补ǰ̨待补û待补`;
+    }
+
+    for (const step of planSend(pending)) {
+      if (step.kind === 'clipboard') {
+        const r = await runCommand(sub, [
+          'powershell.exe', '-NoProfile', '-Command',
+          `Set-Clipboard -Value '${step.text.replace(/'/g, "''")}'`,
+        ], { timeoutMs: 15000 });
+        if (!r.ok) return `д待补ʧ待补ܣ待补û待补ȥ待补${r.message}`;
+        await new Promise((r2) => setTimeout(r2, 120));
+        continue;
+      }
+      const input = await performInput(
+        { kind: 'key', key: step.key, ...(step.modifiers === undefined ? {} : { modifiers: step.modifiers }) } as never,
+        { allowedTitles: [] },
+      );
+      if (!input.ok) return `待补${step.key}待补ܣ待补û待补ȥ待补${input.message}`;
+      await new Promise((r2) => setTimeout(r2, 200));
+    }
+    return pending.text.trim() === ''
+      ? `待补˺͡待补${pending.to}待补ĻỰ待补û˵待补ʲô待补û待补`
+      : `待补ˣ待补${pending.app}待补ġ待补${pending.to}待补${pending.text}待补`;
+  };
+
+  /**
+   * 待补һ待补ͨ待补񣺿待补Ļһ待补ɡ待补
+   *
+   * 待补ǡ待补Ӳ待补붯待补֡待补Ϣ待补һ待补·待补
+   * 待补Ϸ待补ͬһ待补"待补ͼ待补ע待补֤"待补ѭ待补ֻ待补Ŀ待补겻ͬ待补
+   *
+   * ÿ待补鼱ͣ待补ס待补򳬲待补ͣ待补֣待补Ǯ待补
+   */
+  const runTask = async (
+    goal: string,
+    opts: { allowedTitles?: string[]; maxSteps?: number; dryRun?: boolean } = {},
+  ): Promise<{ ok: boolean; kind: 'done' | 'gaveup' | 'stopped' | 'failed'; summary: string; steps: number }> => {
+    const visionModel = resolveVisionModel();
+    if (visionModel === undefined) return { ok: false, kind: 'failed', summary: 'û待补п待补õ待补ģ待补', steps: 0 };
+    const attachments = getAttachments();
+    if (attachments === undefined) return { ok: false, kind: 'failed', summary: '待补񲻿待补', steps: 0 };
+
+    const maxSteps = Math.max(1, Math.min(50, opts.maxSteps ?? DEFAULT_TASK_CONFIG.maxSteps));
+    const dryRun = opts.dryRun ?? DEFAULT_TASK_CONFIG.dryRun;
+    const state = createTaskState();
+    let lastJpeg: Uint8Array | undefined;
+
+    for (let step = 1; step <= maxSteps; step++) {
+      // 待补ͣ待补ȣ待补ÿ待补飨待补һ待补ͣ待补
+      if (!autoplayEstop.canAct()) {
+        const snap = autoplayEstop.snapshot();
+        return { ok: false, kind: 'stopped', summary: `待补ͣ待补${snap.lastReason ?? '待补ֹͣ'}`, steps: state.steps };
+      }
+
+      const shot = await captureScreen();
+      const jpeg = Uint8Array.from(Buffer.from(shot.dataUrl.split(',')[1] ?? '', 'base64'));
+      const changed = lastJpeg === undefined ? true : frameDiff(lastJpeg, jpeg) >= 0.01;
+      lastJpeg = jpeg;
+      // 待补һ待补ƿ待补գ待补Ҫ待补ܻؿ待补ʲô待补
+      // 待补ֻ待补ʶ待补·待补桢待补ѭ待补桪待补ҳ待补￴待补ڼ待补Ļ待补档
+      try {
+        await saveSnapshot(sightSnapshotsRoot, shot.dataUrl.split(',')[1] ?? '', readSightConfig().keepSnapshots);
+      } catch {
+        /* 待补治待补²待补Ӱ待补 */
+      }
+
+      const seen = await lookAtScreen(
+        { llm: ctx.llm, attachments },
+        jpeg,
+        visionModel,
+        'watch',
+        taskPrompt(goal, step, maxSteps),
+        (refs) => void purgeAttachmentObjects(ctx, refs),
+      );
+      if (!seen.ok) return { ok: false, kind: 'failed', summary: seen.message, steps: state.steps };
+
+      // 待补ۣ待补ģ待补͵待补˵待补ʲô待补û待补У待补ʧ待补ʱֻ待补ܲ¡待补
+      console.log('[dsh-whale-girl] 待补 ' + step + ' 待补ģ待补' + seen.text.slice(0, 200));
+
+      // 待补ȿ待补ǲ待补Ǳ待补ɣ待补У待补ٽ待补׶待补ظ待补ʵ待补֣待补
+      const finished = parseTaskDone(seen.text);
+      if (finished !== undefined) {
+        return { ok: true, kind: 'done', summary: finished, steps: state.steps };
+      }
+      const plan = parseActionPlan(seen.text, { width: shot.width, height: shot.height });
+      if (plan.kind === 'noop' || plan.kind === 'invalid') {
+        advanceTaskState(state, `待补${plan.kind === 'noop' ? plan.reason : plan.reason}`, changed);
+        const giveUp = shouldGiveUp(state, maxSteps);
+        if (giveUp.giveUp) return { ok: false, kind: 'gaveup', summary: giveUp.reason, steps: state.steps };
+        continue;
+      }
+
+      // ִ待补һ待补Ķ待补
+      let executed = true;
+      if (!dryRun) {
+        autoplayEstop.markInjecting(true);
+        try {
+          for (const action of plan.actions) {
+            const r = await performInput(action, { allowedTitles: opts.allowedTitles ?? [] });
+            if (!r.ok) {
+              executed = false;
+              return { ok: false, kind: 'failed', summary: `待补ܣ待补${r.message}`, steps: state.steps };
+            }
+          }
+        } finally {
+          autoplayEstop.markInjecting(false);
+        }
+      }
+      advanceTaskState(state, `${executed ? '' : '[待补]'}${plan.actions.length} 待补`, changed);
+      const giveUp = shouldGiveUp(state, maxSteps);
+      if (giveUp.giveUp) return { ok: false, kind: 'gaveup', summary: giveUp.reason, steps: state.steps };
+    }
+    return { ok: false, kind: 'gaveup', summary: `待补 ${state.steps} 待补û待补`, steps: state.steps };
+  };
+
+  const runSightOnce = async (): Promise<SightRound> => {
+    const conf = readSightConfig();
+    const round = await runSightRound(
+      conf,
+      {
+        capture: () => captureScreen(),
+        describe: async (jpeg: Uint8Array, mode) => {
+          // ʶͼ待补ĸ待补ģ待补ͣ待补sight.json 待补ָ待补 > 待补õ待补 chatModel > 待补Ựʵ待补ģ待补͡待补
+          // 待补֮ǰ待补 sight.json 待补 chatModel待补û待补У待补Զ待补䵽待补Ựģ待补ͣ待补
+          const visionModel = resolveVisionModel();
+          if (visionModel === undefined) {
+            return { ok: false as const, reason: 'no-model', message: 'û待补õ待补ʶͼģ待补' };
+          }
+          // attachments 待补 inject 待补б待补待补ȡ待补Ӳȡ待补 500待补
+          const attachments = getAttachments();
+          if (attachments === undefined) {
+            return { ok: false as const, reason: 'attachments-missing', message: '待补񲻿待补' };
+          }
+          const result = await lookAtScreen(
+            { llm: ctx.llm, attachments },
+            jpeg,
+            visionModel,
+            mode,
+            undefined,
+            // 待补ؼ待补٣待补һ待补ɾ待补ʱ待补
+            (refs) => {
+              void purgeAttachmentObjects(ctx, refs);
+            },
+          );
+          return result.ok ? { ok: true as const, text: result.text } : result;
+        },
+        persist: (jpegBase64: string, keep: number) => saveSnapshot(sightSnapshotsRoot, jpegBase64, keep),
+        diff: frameDiff,
+        parseReply: parseSightReply,
+      },
+      sightState,
+    );
+
+    if (round.kind === 'spoke') {
+      const petId = resolveActivePetId();
+      state.writePet(
+        petId,
+        'say',
+        // ʶ待补Ĭ待补ֻ待补ݣ待补conf.speak 待补򿪺待补Ⱦ待补
+        round.speak ? { text: round.text, speak: true } : { text: round.text },
+      );
+      console.log(`[dsh-whale-girl] 待补Ļ˵待补${round.text}`);
+
+      // д待补**ͬһ待补ݼ待补**待补memory.json待补/待补Ի待补ã待补
+      //
+      // Ϊʲô待补ʹ待补ʶ待补待补桢待补ֵļ待补ѵ待补𡹡待补
+      // 待补ʶ待补ȷʵ待补Ƕ待补ģ待补ÿ待补ο待补ղſ待补Ӯ待补һ待补ڸ待补
+      // 待补Ļ˵待补Ļ待补Ҳ待补ʷ待补´ζԻ待补ܽ待补ϡ待补
+      if (conf.memoryShared) {
+        try {
+          const cfgNow = readAllConfig(configPaths);
+          const mem = await readMemory();
+          const found = findPetInstance(cfgNow, petId);
+          const entryKey = found ? found.entry : 'main';
+          const bucket = (mem[entryKey] ??= {});
+          const record = (bucket[petId] ??= { messages: [] });
+          const now = Date.now();
+          // 待补һ待补 system 待补ע待补ǣ待补ⱻģ待补͵待补"待补˵待补Ļ待补"
+          record.messages.push({ role: 'assistant', content: `待补ҿ待补Ļ待补˵待补${round.text}待补`, ts: now });
+          // 待补ضϵ待补ֹ待补 token
+          const rounds = memoryRounds(petId, cfgNow);
+          const keep = Math.max(0, rounds) * 2;
+          if (keep > 0 && record.messages.length > keep) {
+            record.messages = record.messages.slice(-keep);
+          }
+          await writeMemory(mem);
+        } catch (e) {
+          // 待补дʧ待补ܲ待补Ӱ待补Ѿ待补ɹ待补Ĵ
+          console.warn('[dsh-whale-girl] ʶ待补д待补ʧ待补ܣ待补' + (e instanceof Error ? e.message : String(e)));
+        }
+      }
+    } else if (round.kind === 'failed') {
+      console.warn(`[dsh-whale-girl] ʶ待补ʧ待补ܣ待补${round.reason}待补${round.message}`);
+    }
+    return round;
+  };
+
+  /**
+   * 待补ʶ待补ʱ待补
+   *
+   * 待补 `setTimeout` 待补 `setInterval`待补һ待补ʶ待补Ҫץ待补 + 待补ģ待补ͣ待补뼶待补
+   * 待补̶待补ִ待补϶ѻ待补֤待补һ待补ſ待补ʼ待补ʱ待补һ待补֡待补
+   *
+   * 待补ñ待补POST /sight/config待补̵待补ţ待补õ待补
+   */
+  let sightTimer: ReturnType<typeof setTimeout> | null = null;
+  const armSightTimer = (): void => {
+    if (sightTimer !== null) {
+      clearTimeout(sightTimer);
+      sightTimer = null;
+    }
+    const conf = readSightConfig();
+    if (!conf.enabled) return; // 待补ž待补ʲô待补
+    // 待补ǹ̶待补Ƶ待补ʣ待补Ҫ待补ǡ待补ż待补һ待补ۡ待补ǻ待补е待补ÿ N 待补
+    const delayMs = nextSightDelayMs(conf);
+    sightTimer = setTimeout(() => {
+      sightTimer = null;
+      void (async () => {
+        try {
+          await runSightOnce();
+        } catch (e) {
+          console.warn('[dsh-whale-girl] ʶ待补쳣待补' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+          armSightTimer(); // 待补ʽ待补һ待补
+        }
+      })();
+    }, delayMs);
+  };
+
+  /**
+   * **待补Ựʵ待补õ待补ģ待补**待补۲待补ֵ待补
+   *
+   * Ϊʲô待补ֻ待补 `agentDefaultModel.currentSelection()`待补DSH 待补ĵ待补д待补ú待补
+   * 待补owns the **default** model selection independently of any Host or transport待补
+   * Ҳ待补**待补»Ự待补Ĭ待补ģ待补**待补ǰ待补Ự待补Ǹ待补¡待补
+   * ʵ待补ײ待补ˣ待补profile 待补Ĭ待补д待补 `workbuddy-ai`待补˵待补ǰ待补Ự待补
+   * `deepseek-account/deepseek-flash` 待补ϣ待补ȴ待补Ĭ待补ֵȥ待补ã待补ֱ待补ӳ待补 429待补
+   *
+   * Ȩ待补Դ待补 `agent/request` 待补ٲ待补ÿһ待补 provider/model 待补һ待补
+   * 待补DSH 待补Լ待补ĻỰ待补ģ待补ѡ待补Ҳ待补ٲ待补︲待补ǵģ待补 dsh-agent 待补
+   * `installModelSelection`待补ֻ**待补**待补`await next()` 待补õ待补ԭ待补أ待补
+   * 待补á待补
+   *
+   * û待补۲待补û待补ܹ待补κζԻ待补ʱ待补˻待补Ĭ待补ֵ待补Ϊû待补ݾͲ待补
+   */
+  let observedSessionModel: { provider: string; model: string } | undefined;
+
+  /**
+   * 待补ѧ待补ĻỰģ待补**待补**待补
+   *
+   * Ϊʲô待补棺待补۲待补ֵֻ待补ڽ待补ڴ待补DSH һ待补û待补ˡ待补
+   * 待补û待补κ待补Ƕ待补ʱ待补䣬`resolveCurrentModel()` ֻ待补˻待补
+   * `agentDefaultModel` 待补Ĭ待补ֵ待补Ǹ待补Ĭ待补ֵ待补Ѿ待补 workbuddy-ai待补
+   * 待补ǡ待补һ待补ζԻ待补/待补ض待补ʧ待补һ待补Ρ待补ʵ待补ȵ待补
+   * 待补ϴ待补ѧ待补ģ待补ھͲ待补ˡ待补
+   */
+  const observedModelPath = join(userRoot, 'observed-model.json');
+  try {
+    const cached = JSON.parse(readFileSync(observedModelPath, 'utf8')) as { provider?: unknown; model?: unknown };
+    if (typeof cached.provider === 'string' && cached.provider !== '' && typeof cached.model === 'string' && cached.model !== '') {
+      observedSessionModel = { provider: cached.provider, model: cached.model };
+    }
+  } catch {
+    /* 待补״待补û待补л待补棬待补 */
+  }
+  const persistObservedModel = (value: { provider: string; model: string }): void => {
+    observedSessionModel = value;
+    void (async () => {
+      try {
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(observedModelPath, JSON.stringify(value, null, 2) + '\n', 'utf8');
+      } catch {
+        /* 待补治待补Ӱ待补챾待补ζԻ待补 */
+      }
+    })();
+  };
+  ctx.effect(() => {
+    try {
+      return ctx.on('agent/request', async (_payload: unknown, next: () => Promise<unknown>) => {
+        const resolved = (await next()) as { provider?: unknown; model?: unknown } | undefined;
+        try {
+          const provider = resolved?.provider;
+          const model = resolved?.model;
+          if (typeof provider === 'string' && provider !== '' && typeof model === 'string' && model !== '') {
+            // 待补˲待补д待补̣待补ÿ待补д待补װ待补 IO
+            if (observedSessionModel?.provider !== provider || observedSessionModel.model !== model) {
+              persistObservedModel({ provider, model });
+            }
+          }
+        } catch {
+          /* ֻ待补Ҳ待补Ӱ待补һ待补 */
+        }
+        return resolved;
+      });
+    } catch (e) {
+      // 待补¼待补ע待补ʧ待补**待补**待补۲待补ģ待补ֻ待补ǡ待补öԻ待补׼待补ǿ待补
+      // 待补˻待补 agentDefaultModel 待补Ĭ待补ֵҲҪ待补ܡ待补
+      console.warn(
+        '[dsh-whale-girl] 待补޷待补 agent/request待补˻待补Ĭ待补ģ待补ͣ待补' +
+          (e instanceof Error ? e.message : String(e)),
+      );
+      return () => {};
+    }
+  }, 'dsh-whale-girl: observe session model');
+
+  /**
+   * 待补ǰ待补Ի待补ĸ待补ģ待补͡待补ȹ۲쵽待补ĻỰģ待补ͣ待补 agentDefaultModel 待补Ĭ待补ֵ待补
+   * 待补Ի待补待补һ待补ڣ待补֤待补ھ待补һ待补¡待补
+   */
+  const resolveCurrentModel = (): { provider: string; model: string } | undefined => {
+    if (observedSessionModel !== undefined) return observedSessionModel;
+    try {
+      const sel = ctx.agentDefaultModel.currentSelection() as { provider?: string; model?: string } | undefined;
+      if (typeof sel?.provider === 'string' && sel.provider !== '' && typeof sel.model === 'string' && sel.model !== '') {
+        return { provider: sel.provider, model: sel.model };
+      }
+    } catch {
+      /* δ待补 待补 undefined */
+    }
+    return undefined;
+  };
+
+  /**
+   * 待补ã待补`$DSH_HOME/dsh-whale-girl/voice.json`待补ѡ待补ھ待补Ĭ待补ϣ待补
+   *
+   * Ϊʲô待补 config.jsonc待补Ƿ待补ϸ待补ֶ待补У待补롸待补滻待补壬
+   * 待补Python ·待补ɫ待补޹أ待补ȥ待补
+   * 待补÷Ƿ待补 待补 待补ﲻ待补ʾ待补ǣ待补
+   *
+   * 待补ֶ待补ȫ待补ѡ待补
+   *   { "voice": "zh-CN-XiaoyiNeural", "rate": "+0%", "pythonPath": "C:\\...\\python.exe", "language": "zh" }
+   *
+   * ÿ待补ζ待补¶待补ļ待补С待补ˢ待补ҳ待补漴待补Ч待补
+   */
+  const readVoiceConfig = (): {
+    voice: string;
+    rate: string;
+    pythonPath?: string;
+    language?: string;
+    shortcut?: string;
+    micDeviceId?: string;    hideButton?: string;
+  } => {
+    const fallback = { voice: DEFAULT_VOICE, rate: DEFAULT_RATE } as {
+      voice: string;
+      rate: string;
+      pythonPath?: string;
+      language?: string;
+      shortcut?: string;
+      micDeviceId?: string;      hideButton?: string;
+    };
+    try {
+      const raw = readFileSync(join(userRoot, 'voice.json'), 'utf8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const voice = typeof parsed.voice === 'string' && parsed.voice.trim() !== '' ? parsed.voice.trim() : fallback.voice;
+      const rate = typeof parsed.rate === 'string' && parsed.rate.trim() !== '' ? parsed.rate.trim() : fallback.rate;
+      const pythonPath = typeof parsed.pythonPath === 'string' && parsed.pythonPath.trim() !== '' ? parsed.pythonPath.trim() : undefined;
+      const language = typeof parsed.language === 'string' && parsed.language.trim() !== '' ? parsed.language.trim() : undefined;
+      const shortcut = typeof parsed.shortcut === 'string' && parsed.shortcut.trim() !== '' ? parsed.shortcut.trim() : undefined;
+      const micDeviceId =
+        typeof parsed.micDeviceId === 'string' && parsed.micDeviceId.trim() !== '' ? parsed.micDeviceId.trim() : undefined;
+      const hideButton = typeof parsed.hideButton === 'string' && parsed.hideButton.trim() !== '' ? parsed.hideButton.trim() : undefined;
+      return { voice, rate, pythonPath, language, shortcut, micDeviceId, hideButton };
+    } catch {
+      // 待补ļ待补 / 待补ǺϷ待补 JSON待补Ĭ待补Ĭ待补ֵ待补ǿ待补ѡ待补ֻ待补ò待补
+      return fallback;
+    }
+  };
+  /**
+   * 待补Ŀ¼待补 待补 待补붯待补زģ待补/thumb待补**ͬһ待补زĹ待补**待补
+   *   - `pet/<待补زĸ待补>-memes/` 待补ڣ待补Դ待补**ֻ待补**待补·待补ɶ待补䡪待补
+   *     待补鲻待补 404 / 待补Ŀ待补޳待补 `pet/<待补زĸ待补>-animation/` 待补Ķ待补ռ待补һ待补£待补
+   *   - 待补û待补Ŀ¼ `$DSH_HOME/dsh-whale-girl/memes/` 待补ȣ待补ΰ待补 `assets/memes/`待补ļ待补ϲ待补
+   *     待补롸main-animation/<ext> 待补 待补 assets/<ext>待补ز待补ͬ待补
+   * 待补أ待补readMemePool待补·待补ɣ待补/pic/memes待补**ͬһ待补**待补ѡ待补֣待补
+   * ·待补ɱ待补ȡ待补õ待补ͼ待补ͼ待补ѡ待补
+   * 待补زĸ待补һ待补ȹ待补 resolveAsset待补 URL 待补Σ待补Windows 待补 %5C 待补ķ待补б待补ܲ待补ᱻ
+   * rest.split('/') 待补п待补ֱ待补 join 待补 `..\..\x` 待补ӳ待补û待补̣待补 /thumb ͬһ待补ߣ待补
+   */
+  const memeDirsFor = (assetRoot: string): string[] => {
+    const own = resolveAsset(petConfigDir, assetRoot + '-memes');
+    if (own !== undefined && existsSync(own)) return [own];
+    return [memesUserRoot, PACKAGE_MEMES_DIR];
+  };
+  // 待补ѯͳһ״̬待补S待补ǰ待补 1s 待补ѯ待补**Ψһ**待补Դ待补 / 待补״̬ / ֪ͨ / 待补˵待补
+  // 待补д待补 state.writeSection / writePet待补ͳһ待补 counter待补 ./state 待补˵待补
+  const state = new PollStateStore();
+  // 待补״̬待补գ待补/work-status 待补˵待补Ӧ待补 1s 待补ѯ待补state=待补ǰ待补״̬待补null=待补У待补
+  // task=待补ǰ待补顢ts=待补仯ʱ待补䣨待补ѯ待补仯待补ã待补İ待补ڴˣ待补
+  // events.workStatusTexts待补host 待补İ待补
+  // 待补ۺ待补չʾѡ待补 WorkStatusStore待补host/work-status.ts待补߼待补ɵ待补⣩待补**state 待补 task 待补
+  // 待补Ự待补**待补task 待补ȫ待补ֵ待补ֵ待补д待补һ待补ξ͸待补Ŵ˺待补лỰ待补һֱ待补ʾ待补issue #59待补
+  // 待补ڴ待补̬待补ؿ待补У待补ÿ待补λỰ待补¼待补ʵ待补״̬待补仯待补Ÿ待补£待补ǩ待补ȶԷ待补ˢ待补
+  const workStatus = new WorkStatusStore();
+  // 待补״̬待补 待补 д待补 S待补ǰ待补 1s 待补ѯ /state 待补 counter 待补仯待补Ⱦ待补
+  // **ֻ待补ı待补ʱ待补д**待补ÿ待补д待补ƽ待补 counter待补ǰ待补˾ݴ待补ز待补λ待补
+  // 待补Ự待补¼待补ܣ待补ÿ待补 tool/call 待补д待补Ѷ待补ˢ待补ɻõ待补Ƭ待补
+  // 待补о待补**待补**待补state + task待补 store 待补 ts待补ts 待补 Date.now()待补ֱ待补ʣ待补
+  // ͬһ待补λᱻ待补г待补"û待补仯"待补©д待补¼待补ͻ待补ȵ待补
+  // data 待补ﲻ待补ٴ待补 ts待补û待补С待补Ҷ待补 counter 待补е待补һ待补Ư待补Ƶĵڶ待补źš待补
+  let publishedWork = '\u0000';
+  const publishWorkStatus = (): void => {
+    const snap = workStatus.snapshot();
+    const key = String(snap.state) + '\u0000' + String(snap.task);
+    if (key === publishedWork) return;
+    publishedWork = key;
+    state.writeSection('workStatus', { state: snap.state, task: snap.task });
+  };
+  // ϵͳ֪ͨ֡待补host 待补 DSH 待补¼待补֪ͨ֡待补֡待补Լ待补 shared/notify.ts һ待补£待补д待补 S 待补
+  // sections.notify待补 1s 待补ѯ /state 待补 toast待补
+  // 待补DSH 0.1.5 ɾ待补 api.events.mux/host 待补¼待补Ϊ host ת待补ͨ待补
+  // 待补 DSH 待补汾待补仯待补¼待补 API待补
+  // **待补**待补󵽸待补ȵ待补ͬһ待补ֻ待补һ待补ȡ待补ᡪ待补1 待补ϵͳ֪ͨ
+  // 待补û待补壨待补Բ待补ٴ待补 seq / 待补֡待补У待补ǰ待补 frames 待补ɾ待补
+  const pushNotifyFrame = (frame: HostNotifyFrame): void => {
+    state.writeSection('notify', frame);
+  }; /** ÿ待补Ự turn 待补־待补goal 待补ж待补չʾ待补 turn/end 待补վ待补壩 */
+  const turnFlags = new Map<string, WorkStatusTurnContext>();
+  /** 待补̬待补success/error待补չʾ待补ڶ待补ʱ待补Լ 60s 待补ûỰ待补Ŀ待补¾待补̬待补ٸ待补Bug 2/3待补 */
+  const terminalTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const TERMINAL_KEEP_MS = 60 * 1000;
+  /** ȡ待补ĳ待补Ự待补ִ待补е待补̬待补Ự待补ѻص待补̬待补Ǵ待补Ȳ待补Ҳ待补ţ待补ֻ待补 */
+  const cancelTerminalCleanup = (sessionId: string): void => {
+    const t = terminalTimers.get(sessionId);
+    if (t === undefined) return;
+    clearTimeout(t);
+    terminalTimers.delete(sessionId);
+  };
+  /** 待补һ待补̬待补ʱ待补ÿ待补Ựһ待补 */
+  const scheduleTerminalCleanup = (sessionId: string): void => {
+    if (terminalTimers.has(sessionId)) return;
+    const t = setTimeout(() => {
+      terminalTimers.delete(sessionId);
+      const sessionState = workStatus.stateOf(sessionId);
+      if (sessionState === 'success' || sessionState === 'error') {
+        workStatus.clear(sessionId); // 待补Ŀ待补ͬ待补İ待补һ待补ʧ待补
+        turnFlags.delete(sessionId);
+        publishWorkStatus(); // 待补Ҫд S待补ǰ待补һֱ待补¾待补̬
+      }
+    }, TERMINAL_KEEP_MS);
+    terminalTimers.set(sessionId, t);
+  };
+  // ֪ͨ待补待补ţ待补issue #114待补Ի待补ɡ待补̵待补ȹ待补𣬵待补ȷ待补Ựȷʵû待补ٵ待补
+  // 待补ܵ待补Ӵ待补 / 待补Ŷӳ待补Ա待补̨待补񡢻待补Ծ待补һ待补ǿ待补 待补 待补һ֡待补
+  //
+  // Ϊʲô待补ӳٶ待补ͬ待补飺`workspace/session-activity` 待补 turn 待补**待补 Agent 待补
+  // status**待补 turn/end 待补ڻغ待补 finally 待补׷待补ӵġ待补ͬ待补һ待补Լ待补 running待补оݱ待补Ȼ
+  // 待补ǿգ待补ա待补һ待补ǿվͲ待补д待补ÿһ待补֪ͨ待补̵待补 notify-events.ts 待补 hasBlockingActivity待补
+  // 待补ӳ待补ͬʱ待补á待补Ա待补ձ待补 idle待补Lead 待补һ待补 send_message 待补ְ待补ѡ待补Ĵ待补ڹ待补ȥ待补Ӻ待补
+  // 待补Ͷ待补ݡ待补Ŀ待补һ待补֣待补
+  //
+  // 待补оݲ待补ã待补û待补 workspace待补standalone α ctx û待补 waterfall待补״待补ֵ待补״待补ԣ待补
+  // 待补 һ待补ɷ待补У待补ɶ൯һ待补Ҳ待补֪ͨ待补һ待补ơ待补
+  const NOTIFY_ACTIVITY_DELAY_MS = 1500;
+  /** ÿ待补Ựһ待补鶨ʱ待补ͬ待补Ự待补βֻ待补һ待补Σ待补󵽸待补ȵ待补뵥待补֡ͬ待补壩 */
+  const notifyActivityTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** waterfall ֻ待补õ待补ǩ待补DSH δ待补¼待补/待补Ӧ待补ͣ待补 ctx ͬΪ any 待补״һ待补£待补 */
+  type Waterfall = (name: string, request: unknown, next: () => Promise<unknown[]>) => Promise<unknown>;
+  /** 待补Ự待补Ƿ待补ܵĻ待补оݲ待补һ待补 false待补 */
+  const sessionHasRunningWork = async (sessionId: string): Promise<boolean> => {
+    const waterfall = (ctx as { waterfall?: Waterfall }).waterfall;
+    if (typeof waterfall !== 'function') return false;
+    try {
+      const activity = await waterfall.call(ctx, 'workspace/session-activity', { sessionId }, () =>
+        Promise.resolve([]),
+      );
+      return hasBlockingActivity(activity);
+    } catch {
+      return false; // 待补ѯʧ待补ܲ待补֪ͨ待补롸待补оݲ待补ʱ待补С待补ͬһ待补ԣ待补
+    }
+  };
+  /** 待补һ待补待补Ŷ待补ʱ待补ȷ待补Ͽ待补в待补һ֡ */
+  const scheduleCompletionNotify = (sessionId: string, event: unknown): void => {
+    const prev = notifyActivityTimers.get(sessionId);
+    if (prev !== undefined) clearTimeout(prev);
+    notifyActivityTimers.set(
+      sessionId,
+      setTimeout(() => {
+        notifyActivityTimers.delete(sessionId);
+        void (async () => {
+          if (await sessionHasRunningWork(sessionId)) return; // 待补л待补β待补ٵ待补
+          const frame = reduceNotifyFrame(event as Parameters<typeof reduceNotifyFrame>[0]);
+          if (frame) pushNotifyFrame(frame);
+        })();
+      }, NOTIFY_ACTIVITY_DELAY_MS),
+    );
+  };
+  // 待补待补ǰ待补衹待补/pet ѡ待补/chat ʹ待补ã待补ȫ待补ֵ待补ֵ待补ֻỰ待补ڴ棬待补Ĭ待补ϵ待补һֻ
+  let activePetId = '';
+  // 待补ڵ待补ȵġ待补ϴ待补ʱ待补̡待补待补ľݴ待补жϵ待补û待补㡣
+  // 待补ǰ待补ݽ待补 whisperCache待补 + ts 待补Ƚϣ待补"待补ò待补"待补ɵ待补Ȳ待补
+  // "待补ɽ待补"ֱ待补д S待补˹待补ͬһ待补 S 待补Ȼ待补֤待补Ҫ待补ڶ待补ݻ待补档
+  const lastWhisperAt = new Map<string, number>();
+
+  // 待补Ի待补ļ待补Ψһ待补д待补 = 待补̣待补/待补˶待补ֻ待补ǿͻ待补 待补 ͬһʵ待补Ȼ待补ͬһ待补ݼ待补䣩待补
+  // 待补ṹ˫待补㣺{ <待补Ͱ assetRoot ?? petId>: { <ʵ待补 id>: { messages: ChatMemoryMessage[] } } }
+  const memoryPath = join(userRoot, 'memory.json');
+  // 待补Ի待补д待补ж待补У待补read-modify-write 待补Ŷ待补ִ待补У待补ͬʱ待补Ի待补ʱ待补д待补
+  let chatQueue: Promise<void> = Promise.resolve();
+
+  /** 待补ļ待补 待补 待补գ待补 待补 待补ʽ待补 + 待补ԭʼ待补ļ待补Ĭ待补ݣ待补+ 待补ؽ待补ռ待补 */
+  const readMemory = async (): Promise<Record<string, Record<string, { messages: ChatMemoryMessage[] }>>> => {
+    let raw: string;
+    try {
+      raw = await readFile(memoryPath, 'utf8');
+    } catch {
+      return {}; // 待补ļ待补 = 待补޼待补
+    }
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      if (!parsed || typeof parsed !== 'object') throw new Error('not an object');
+      return parsed as Record<string, Record<string, { messages: ChatMemoryMessage[] }>>;
+    } catch (e) {
+      console.error(
+        `dsh-whale-girl: 待补ļ待补ѱ待补ݣ待补Ի待补ͷ待补ʼ待补${memoryPath}待补${e instanceof Error ? e.message : String(e)}待补`,
+      );
+      try {
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(`${memoryPath}.bak-${Date.now()}`, raw, 'utf8');
+      } catch {
+        /* 待补ʧ待补ܽ待补澯待补 */
+      }
+      return {};
+    }
+  };
+
+  const writeMemory = async (mem: Record<string, Record<string, { messages: ChatMemoryMessage[] }>>): Promise<void> => {
+    await mkdir(userRoot, { recursive: true });
+    await writeFile(memoryPath, JSON.stringify(mem, null, 2), 'utf8');
+  };
+
+  /** 待补һ待补ζ待补д待补ж待补У待补ͬ待补ڷ待补 fn 待补Ľ待补 */
+  const withMemoryLock = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = chatQueue.then(fn, fn);
+    chatQueue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  };
+
+  // ---- 待补ѣ待补Ψһ待补 readAllConfig待补./config待补ֵ待补ȷ待补ֻ待补ֶΣ待补У待补 ----
+
+  /** ĳ待补 system待补Ŀ待补ļ待补 待补 main 待补Ŀ待补 whisperPrompt待补ϲ待补Ĭ待补ϣ待补
+   *  + 待补׷待补һ待补name待补ȱʧ待补Ѱ待补 id待补Ի待补ͬһƴװ待补
+   *  + ĩβ׷待补һ待补**ʱ待补䱳待补**待补time-context.ts待补/待补/ʱ待补/ʱ待补/待补ջ待补ĩ待补
+   *    待补Ի待补ÿ待补ɶ待补待补õ待补Զ待补**待补ǰ**ʱ待补̣待补Ҫ待补ˢ待补»待补ƣ待补
+   *    待补Ƿ待补 Date ʱ待补Ϊ待补մ待补ʱ待补в待补ӣ待补û待补ʱ待补Ϣ待补Ҳ待补 NaN ƴ待补ʾ待补ʣ待补 */
+  const petSystemPrompt = (petId: string, cfg: Record<string, Record<string, unknown>>): string => {
+    const found = findPetInstance(cfg, petId);
+    const conf = found ? found.conf : (cfg.main ?? {});
+    const prompt = typeof conf.whisperPrompt === 'string' ? conf.whisperPrompt : '';
+    const name = found ? String(found.pet.name || found.pet.id || petId) : petId;
+    const nameLine = '待补ǡ待补' + name + '待补';
+    const base = prompt ? prompt + '\n' + nameLine : nameLine;
+    const time = timeContextOf(new Date());
+    return time ? base + '\n' + time : base;
+  };
+
+  /** 待补Ի待补1 待补 = 1 待补 1 待补𣩣待补Ŀ/待补Ŀ待补 chatMemoryRounds待补ϲ待补Ĭ待补ϷǸ待补֣待补 */
+  const memoryRounds = (petId: string, cfg: Record<string, Record<string, unknown>>): number => {
+    const found = findPetInstance(cfg, petId);
+    const v = Number(found?.conf.chatMemoryRounds ?? cfg.main?.chatMemoryRounds);
+    return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 5;
+  };
+
+  /** 待补/待补ĳ待补һ待补待补 GET 待补˵待补ֶ待补õ待补ͬһ待补߼待补
+   *  ÿֻ待补ɣ待补Ŀ待补裩待补ɳɹ待补д待补 S 待补 pets.<id>.say待补
+   *  待补 / 待补 / 待补Ի待补ظ待补ǰ待补˱待补**ͬһ待补չʾ待补·**待补ͬһ待补 triggerWhisper待补
+   *  ͬһ待补ݲۡ待补ͬһ待补 events.whisper 待补Ժϲ待补ͬһ待补Ҷ待补ӣ待补"待补ڲ待补ظ待补"待补
+   *  待补Ȳ待补 lastWhisperAt 待补֤待补Ҫһ待补 whisperCache待补˹待补Ҳ待补 S 待补Ȼ待补֤待补
+   *  待补ͼ待补whisperImageEnabled 待补ʱ待补ӱ待补**待补 1 待补**待补ע待补ָ待补待补ı待补һ待补д待补 */
+  const publishWhisper = async (petId: string): Promise<boolean> => {
+    const cfg = readAllConfig(configPaths);
+    const found = findPetInstance(cfg, petId);
+    const conf = found ? found.conf : (cfg.main ?? {});
+    const entry = found ? found.entry : 'main';
+    const system = petSystemPrompt(petId, cfg);
+    // 待补ͼ待补ȫ待补ֿ待补عر待补 / 待补Ϊ待补 / 待补ͼƬȫȱʧ 待补 待补ı待补˻待补Ϊԭ待补Ϊ待补
+    const meme = conf.whisperImageEnabled === true ? pickMeme(readMemePool(conf.memes, memeDirsFor(entry))) : undefined;
+    // ģ待补ͣ待补Ŀ待补õ待补 whisperModel 待补ȣ待补 = 待补ָ待补ɲ待补ʧ待补ܻ待补䵽待补ǰ待补Ի待补ģ待补һ待补
+    const result = await generateWhisper(ctx, system, meme, configuredModel(conf, 'whisperModel'));
+    if (!result.ok) {
+      // ʧ待补**待补д S**待补ǰһ待补£待补Ĭ待补 + console.warn待补α待补İ待补ݣ待补
+      console.warn(
+        '[dsh-whale-girl] 待补ʧ待补 pet=' +
+          petId +
+          ' reason=' +
+          result.reason +
+          (result.message ? ' ' + result.message : ''),
+      );
+      return false;
+    }
+    state.writePet(petId, 'say', result.image ? { text: result.text, image: result.image } : { text: result.text });
+    return true;
+  };
+
+  /** 待补ĳֻ待补Ի待补ȡ待补 待补 待补ɻظ待补 待补 д待补 待补 待补ѻظ待补д待补 S 待补 pets.<id>.say待补
+   *  待补 POST /chat待补˵㣩待补 /chat 待补待补ͬһ待补·待补ڶ待补д待补˽待补д待补̣待补
+   *  待补ͼ待补chatImageEnabled 待补ʱ待补ѱ待补嵥待补ģ待补Ͱ待补ﾳѡһ待补ţ待补г待补ڲ待补ظ待补д待补ء待补 */
+  const chatWithPet = async (
+    petId: string,
+    text: string,
+    override?: { provider: string; model: string },
+    /**
+     * Ҫ待补Ҫ待补**待补Ⱦ待补**待补ѻظ待补д待补 `say` 待补 `speak` 待补ǣ待补
+     *
+     * - 待补ֶԻ待补Ҽ待补Ի待补 true待补û待补б待补Ĳ待补;待补Ⱦ待补˳待补
+     * - 待补Ի待补 **false**待补`/voice/turn` 待补ĵ待补÷待补ҳ待补Լ待补ϳɲ待补ţ待补
+     *   待补洰待补һ待补ξͳ待补**ͬһ待补仰待补**待补ʵ待补ȵ待补
+     */
+    speakReply = true,
+    /**
+     * 待补Ի待补ʶ待补֡ + ˵待补
+     * 待补ʹ待补ͼ待补ش待补û待补о待补Ǵ待补ı待补ͬһ待补·待补֧待补
+     */
+    preSight?: { note: string; images: Uint8Array[] },
+  ): Promise<
+    | { ok: true; text: string; image?: string; fellBackTo?: string }
+    | { ok: false; reason: 'provider-missing' | 'generate-error'; message?: string }
+  > =>
+    withMemoryLock(async () => {
+      const cfg = readAllConfig(configPaths);
+      const rounds = memoryRounds(petId, cfg);
+      const found = findPetInstance(cfg, petId);
+      const conf = (found ?? { conf: cfg.main ?? {} }).conf;
+      // 待补裺待补Ŀ待补 whisperPrompt待补ϲ待补Ĭ待补ϣ待补+ 待补ͬһƴװ待补
+      const system = petSystemPrompt(petId, cfg);
+      // 待补ͼ待补عر待补 待补 待补ճأ待补ָ待补룬待补Ϊ待补һ待补£待补Ŀ¼待补Ŀȡ待补
+      // 待补ޣ待补chatImageLimit待补0 = 待补ƣ待补嵥ÿ待补Ϣ待补Ҫ待补ضϺ待补޿ɿء待补
+      const pool =
+        conf.chatImageEnabled === true
+          ? limitPool(readMemePool(conf.memes, memeDirsFor(found?.entry ?? 'main')), Number(conf.chatImageLimit))
+          : [];
+      const mem = await readMemory();
+      const bucketKey = found?.entry ?? petId;
+      const bucket = (mem[bucketKey] ??= {});
+      const entry = (bucket[petId] ??= { messages: [] });
+      // rounds = 0待补û待补ص待补ʷ待补 待补ʷ待补β待补 rounds 待补֣待补1 待补 = 1 待补 1 待补𣩡待补
+      // 待补д slice(-rounds * 2)待补-0 待补 JS 待补 === 0待补slice(-0) 待补ǿա待补
+      const list = sliceMemoryRounds(entry.messages, rounds);
+      // ģ待补ͣ待补Ŀ待补õ待补 chatModel 待补ȣ待补 = 待补ָ待补ɲ待补ʧ待补ܻ待补䵽待补ǰ待补Ի待补ģ待补һ待补Ρ待补
+      // override 待补·待补ڡ待补ǰģ待补ͱ待补ʱ待补ʽ待补һ待补ң待补 /voice/turn待补
+      // 待补Ի待补/chat待补Ҽ待补Զ待补Ϊ待补һ待补¡待补
+      const preferred = override ?? configuredModel(conf, 'chatModel') ?? resolveCurrentModel();
+
+      /**
+       * 待补Ի待补ʶ待补ץ待补Ķ待补֡待补ģ待补͡待补
+       *
+       * ͼƬ待补ȹ待补洢待补DSH 待补ͼƬ待补Ϣֻ待补 ref待补һ待补Ρ待补
+       * 待补ɾ待补ʶ待补ͬһ待补ھ待补ؼ待补٣待补
+       * 待补治待补ȥ待补**待补ɴ待补ı待补**待补һ待补ʧ待补ܲ待补ֶԻ待补ʧ待补ܡ待补
+       */
+      let pictures:
+        | ReadonlyArray<{ attachmentId: string; mediaType: string; bytes: number; width: number; height: number }>
+        | undefined;
+      let userTextWithNote = text;
+      if (preSight !== undefined) {
+        const attachments = getAttachments();
+        if (attachments !== undefined) {
+          try {
+            const refs = await attachments.saveImages(
+              preSight.images.map((data, i) => ({ data, mediaType: 'image/jpeg', name: 'voice-' + (i + 1) + '.jpg' })),
+            );
+            pictures = refs as unknown as typeof pictures;
+            // ˵待补ǰ待补棺待补֡待补ܶԱȱ仯
+            userTextWithNote = preSight.note + '\n' + text;
+            // 待补ؼ待补
+            void purgeAttachmentObjects(ctx, refs);
+          } catch (e) {
+            console.warn('[dsh-whale-girl] 待补ʶ待补ͼʧ待补ܣ待补ı待补' + (e instanceof Error ? e.message : String(e)));
+          }
+        }
+      }
+
+      let generated = await generateChat(ctx, system, list, userTextWithNote, pool, preferred, pictures);
+
+      /**
+       * 待补䣨待补һ待补
+       *
+       * Ϊʲô待补ﶵ待补ʱ待补û待补κ待补 `agent/request`待补
+       * `resolveCurrentModel()` ֻ待补˻待补 `agentDefaultModel` 待补**Ĭ待补ֵ**待补
+       * 待补Ǹ待补Ĭ待补ֵ待补Ͳ待补õ待补ģ待补ͣ待补ʵ待补 workbuddy-ai 待补þ待补
+       * 待补ǡ待补һ待补ζԻ待补ض待补ʧ待补һ待补Ρ待补ܲ
+       *
+       * ֻ待补**待补ȷ待补**待补䣺待补ʧ待补ܣ待补ȱƾ֤ / ģ待补Ͳ待补 / 待补磩待补һ待补ֻ待补ڸ待补⡣
+       */
+      let usedFallback: { provider: string; model: string } | undefined;
+      if (!generated.ok && /429|soft_rate|rate.?limit|Ƶ待补/i.test(generated.message ?? '')) {
+        /**
+         * 待补**待补ͬһ待补ѡ待补һ待补**待补ٿ待补ǻ待补̡待补
+         *
+         * ԭ待补`generateChat` 待补ڲ待补һ待补ѡ待补 preferred 待补 待补ǰĬ待补ģ待补ͣ待补
+         * 待补ѡ待补Ựʵ待补ģ待补ͣ待补ż待补ʧ待补ʱ待补Զ待补䵽**Ĭ待补ģ待补**待补Ǹ待补Ĭ待补ֵ
+         * 待补 workbuddy-ai 待补 待补ձ待补 429 待补ʵ待补**待补׺待补ѡ**待补
+         * 待补ѡ待补޹ء待补˿待补Ϊģ待补ʶ待补ֻ待补ˡ待补
+         * 待补ѡһ待补Σ待补ܵ待补󱨡待补
+         */
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, 300));
+        const retry = await generateChat(ctx, system, list, text, pool, preferred);
+        if (retry.ok) {
+          generated = retry;
+        } else {
+          const currentProvider = (preferred ?? resolveCurrentModel())?.provider ?? '';
+          const alt = await pickFallbackModel(currentProvider);
+          if (alt !== undefined) {
+            const second = await generateChat(ctx, system, list, text, pool, alt);
+            if (second.ok) {
+              generated = second;
+              usedFallback = alt;
+              // ѧ待补Ķ待补Ҫ待补ס待补´α待补ֱ待补ܵģ待补̣待补Ȼ待补ǵã待补
+              persistObservedModel(alt);
+              console.warn(`[dsh-whale-girl] 待补ǰģ待补Ѹ待补 ${alt.provider}/${alt.model} 待补Գɹ待补`);
+            }
+          }
+        }
+      }
+      if (!generated.ok) return generated;
+      const now = Date.now();
+      entry.messages.push({ role: 'user', content: text, ts: now });
+      // 待补ֻ待补ģ待补ͼ待补չʾ待补㣬待补ġ待补´待补ѱ待补ǵ待补ʷ待补ȥ待补
+      entry.messages.push({ role: 'assistant', content: generated.text, ts: now });
+      await writeMemory(mem);
+      // 待补ظ待补д待补 S待补ͬһ待补Ҷ待补ӣ待补ǰ待补˱待补ͬһ待补չʾ待补·待补
+      state.writePet(
+        petId,
+        'say',
+        // `speak` 待补**待补Ⱦ待补˵Ŀ待补**待补ظ待补ò待补洰待补
+        //  - 待补ֶԻ待补 待补 true待补֮待补û待补б待补Ĳ待补;待补
+        //  - 待补Ի待补 待补 false待补÷待补Լ待补洰待补ͬһ待补飩
+        // 待补 / 待补㲥待补Զû待补ֶΣ待补ֻ待补ݡ待补Ȼ待补һ待补
+        speakReply
+          ? generated.image
+            ? { text: generated.text, image: generated.image, speak: true }
+            : { text: generated.text, speak: true }
+          : generated.image
+            ? { text: generated.text, image: generated.image }
+            : { text: generated.text },
+      );
+      // 待补ı待补ش待补·Ҫ待补ȥ待补ϳɣ待补ܿ待补ǰ待补ѯһ待补 S
+      // 待补ֻ待补 { ok: true }待补 /voice/turn 待补 reply 待补Ϊ待补գ待补ǰ待补˾待补Ĭ待补
+      return {
+        ok: true as const,
+        text: generated.text,
+        ...(generated.image ? { image: generated.image } : {}),
+        ...(usedFallback === undefined ? {} : { fellBackTo: `${usedFallback.provider}/${usedFallback.model}` }),
+      };
+    });
+
+  /**
+   * 待补ǰ待补Ч待补б待补 = readAllConfig 待补Ʒ待补ƽ待补main + 待补ļ待补ȫ待补Ŀ待补ϲ待补ѱ待补֤ id Ψһ待补
+   * 待补ֶ待补ģʽ待补ȡ待补
+   */
+  const effectivePetList = (): Record<string, unknown>[] => flattenPetList(readAllConfig(configPaths));
+
+  /** 待补ˢ待补ڣ待补룩待补Ʒ main 待补Ŀ待补 eventsRefreshSec.balance待补ϲ待补Ĭ待补ϣ待补Ƿ待补 1800待补 */
+  const balancePeriodSec = (cfg: Record<string, Record<string, unknown>>): number => {
+    const ers = cfg.main?.eventsRefreshSec as Record<string, unknown> | undefined;
+    const n = Number(ers?.balance);
+    return Number.isFinite(n) && n > 0 ? n : 1800;
+  };
+
+  /** 待补ڣ待补룩待补ó待补**待补Ŀ**待补 eventsRefreshSec.whisper待补ϲ待补Ĭ待补ϣ待补Ƿ待补 300待补 */
+  const whisperPeriodSec = (cfg: Record<string, Record<string, unknown>>, petId: string): number => {
+    const conf = (findPetInstance(cfg, petId) ?? { conf: cfg.main ?? {} }).conf;
+    const ers = conf.eventsRefreshSec as Record<string, unknown> | undefined;
+    const n = Number(ers?.whisper);
+    return Number.isFinite(n) && n > 0 ? n : 300;
+  };
+
+  /**
+   * ˢ待补д待补 S 待补 host 待补**Ψһ**待补ѯ待补㡣
+   *
+   * 待补ǰ待补ÿ待补ͻ待补˸待补԰待补Լ待补Ķ待补ʱ待补ȥ待补飨待补һ待补 + 待补ÿ待补һ待补ͬһ待补ⲿ API
+   * 待补ظ待补˻待补ܿ待补¾ɲ待补һ待补µ待补ݡ待补ֻ待补飬待补˶待补 /state 待补ͬһ待补ݽ待补
+   *
+   * ʧ待补Ҳд待补 S待补reason 待补 unsupported / credential-missing / fetch-error待补待补Ҫ待补
+   * 待补˵待补ݣ待补ܾ待补Ĭ待补쳣ͬ待补 fetch-error待补̡待补
+   *
+   * @param manual 待补ˢ待补ǲ待补"待补û待补Ҫ待补"待补/balance 待补待补桸待补鿴待补待补˵待补
+   *   待补һ待补д待补Ҷ待补ӣ待补ֻ待补 host ֪待补˭Ҫ待补ģ待补ǰ待补˾ݴ˾待补待补ʱҪ待补Ҫ**待补ص待补**
+   *   待补˵待补decideBalanceNotice 待补 explicit待补ˢ待补ֻ待补ԭ待补仯ʱ待补һ待补Σ待补÷待补ˢ待补
+   */
+  /**
+   * 待补˺ŷ待补Ҫ待补ĵ待补÷待补ݣ待补`AccountClientMetadata`待补Platform 待补ͻ待补ͷ待补
+   * ֻӰ待补**待补Դ待补ʶ**待补**待补˱待补ػ待补İ待补**待补ֵ待补֡待补
+   *
+   * - version待补汾待补 package.json待补 '0.0.0'待补ֶ待补ֻ待补Ǳ待补ʶ待补
+   * - locale待补Ĳ待补Ʒ待补̶待补 `zh-CN`待补Platform 待补һ待补 zh_CN待补
+   * - timezoneOffsetSeconds待补 UTC ƫ待补ƣ待补Ϊ +28800待补
+   */
+  const accountClientMetadata = (): { version: string; locale: string; timezoneOffsetSeconds: number } => {
+    let version = '0.0.0';
+    try {
+      const raw = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as { version?: unknown };
+      if (typeof raw.version === 'string' && raw.version.length > 0) version = raw.version;
+    } catch {
+      // 待补Ӱ待补ѯ待补version ֻ待补ƽ̨待补Դ待补ʶ
+    }
+    return { version, locale: 'zh-CN', timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60 };
+  };
+
+  const refreshBalance = async (manual = false): Promise<void> => {
+    const mark = <T>(v: T): T | (T & { manual: true }) => (manual ? { ...v, manual: true } : v);
+    try {
+      const sel = resolveCurrentModel() ?? { provider: '', model: '' };
+      const resolveKey = async (ref: string): Promise<string | undefined> => {
+        const rc = await ctx.credentials.resolve(credentialRef(ref));
+        return rc?.value;
+      };
+      // `deepseek-account`待补Ѷ待补 / ƽ̨待补¼待补û待补 API Key待补ƾ֤待补 DSH 待补˺ŷ待补
+      // 待补е待补Ȩ待补¼待补ֻ待补ܾ待补 getBalance 待补ѯ待补˺ŷ待补**待补ѡ**待补ȡ待补Ž待补
+      // inject待补ûװ待补˺Ų待补ʱ待补ڳ待补ʱ待补·待补ɱ待补 credential-missing 待补Ǳ待补
+      const resolveAccount = async (): Promise<AccountBalanceSnapshot | null | undefined> => {
+        const account = ctx.get('deepseekAccount', false);
+        if (!account) return undefined;
+        return (await account.getBalance(accountClientMetadata())) as AccountBalanceSnapshot | null | undefined;
+      };
+
+      let result = await queryBalance(sel.provider, resolveKey, resolveAccount);
+
+      // 待补ǰ待补û待补ӿڣ待补м̳待补 workbuddy-ai待补ʱ**待补䵽待补нӿڵ待补**
+      // 待补˭待补ˣ待补ֻ待补һ待补䡸待补֧待补֡待补˳待补ȡ待补ԡ待补ڿ待补Ǳ待补ˡ待补
+      // DSH 待补˺ţ待补deepseek-account待补 DeepSeek 待补ٷ待补 API Key待补
+      //
+      // ֻ待补 `unsupported` ʱ待补䣺ȱƾ֤ / ץȡʧ待补**待补ʵ待补**待补
+      // 待补Ļ待补һ待补ʾ待补ڸ待补⣨待补ǡ待补Ҫ待补ü待补̶待补Ĵ待补ط待补ķ待补棩待补
+      if (!result.ok && result.reason === 'unsupported') {
+        for (const candidate of ['deepseek-account', 'deepseek-official'] as const) {
+          const attempt = await queryBalance(candidate, resolveKey, resolveAccount);
+          if (!attempt.ok) continue;
+          const data = attempt.data as unknown as Record<string, unknown>;
+          result = { ...attempt, data: { ...data, fallbackFrom: sel.provider } } as unknown as typeof result;
+          break;
+        }
+      }
+
+      state.writeSection('balance', mark(result));
+    } catch (e) {
+      state.writeSection(
+        'balance',
+        mark({
+          ok: false,
+          provider: 'unknown',
+          reason: 'fetch-error',
+          message: e instanceof Error ? e.message : String(e),
+        }),
+      );
+    }
+  };
+
+  /**
+   * 待补ʱ待补һ待补ģ待补͡待补
+   *
+   * ֻ待补·待补ã待补 /voice/turn待补˷待补˵待补Ĭʧ待补ˣ待补
+   * 待补 429 待补**待补̶待补**待补⣬待补һ待补ͨ待补̿待补á待补
+   *
+   * ѡ待补˳待补DSH 待补˺ţ待补deepseek-account待补 DeepSeek 待补ٷ待补 待补 待补ģ待补͵ķ待补̣待补
+   * ͬ待补ִ待补 flash 待补ģ待补ˡ待补죬待补ʺ待补ģ待补ǰ待补Զ待补
+   */
+  const pickFallbackModel = async (currentProvider: string): Promise<{ provider: string; model: string } | undefined> => {
+    const llm = ctx.llm as
+      | { listProviders?: () => Array<{ id: string }>; listModels?: (p: string) => Promise<Array<{ id: string }>> }
+      | undefined;
+    if (!llm?.listProviders || !llm.listModels) return undefined;
+    try {
+      const providers = llm.listProviders();
+      const rank = (id: string): number => {
+        const order = ['deepseek-account', 'deepseek-official'];
+        const i = order.indexOf(id);
+        return i < 0 ? order.length : i;
+      };
+      const ordered = [...providers].sort((a, b) => rank(a.id) - rank(b.id));
+      for (const provider of ordered) {
+        if (provider.id === currentProvider) continue;
+        try {
+          const models = await llm.listModels(provider.id);
+          if (models.length === 0) continue;
+          const hit = models.find((m) => /flash/i.test(m.id)) ?? models[0];
+          return { provider: provider.id, model: hit.id };
+        } catch {
+          // 待补÷待补û待补ƾ֤ / 待补 待补 待补һ待补
+        }
+      }
+    } catch {
+      /* ö待补ʧ待补ܾͲ待补䣬待补ԭ待补ճ待补ϱ待补 */
+    }
+    return undefined;
+  };
+
+  /** 待补ǰ待补 id待补/pet 待补ѡ待补Դ待补 待补 待补ó待补δѡ/待补ʧЧ 待补 待补Ч待补б待补һֻ待补ڣ待补Ĭ待补ϣ待补 */
+  const resolveActivePetId = (): string => {
+    try {
+      const eff = effectivePetList();
+      if (eff.length === 0) return '';
+      if (activePetId && eff.some((p) => String(p.id) === activePetId)) return activePetId;
+      return String(eff[0].id);
+    } catch {
+      return activePetId;
+    }
+  };
+
+  /** 待补ʾ待补name待补ȱʧ待补 id待补İ待补 */
+  const petDisplayName = (pet: Record<string, unknown>): string => {
+    const n = String(pet.name ?? '').trim();
+    return n || String(pet.id ?? '');
+  };
+
+  let hasDesktopPet = false;
+  const refreshDesktop = (): void => {
+    hasDesktopPet = false;
+    try {
+      hasDesktopPet = effectivePetList().some((p) => isDesktopVisible(p.display));
+    } catch (e) {
+      ctx.logger?.warn?.(`[dsh-whale-girl] 待补÷Ƿ待补ģʽ待补${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  refreshDesktop();
+
+  /** 待补ɼ待补б待补[{id,size}]待补͸待补 Helper 待补ֲ待补ڣ待补ÿ待补һ待补 */
+  const desktopPetList = (): Array<{ id: string; size: number }> => {
+    try {
+      return effectivePetList()
+        .filter((p) => isDesktopVisible(p.display))
+        .map((p) => ({ id: String(p.id), size: Number(p.size) }));
+    } catch {
+      return [];
+    }
+  };
+
+  let helper: HelperProcess | undefined;
+  let startRetryTimer: NodeJS.Timeout | undefined;
+  let electronEnsure: Promise<void> | undefined;
+  let disposed = false;
+  /** 待补ͼ待补λ待补ʾֻ待补ڽ待补ڴ待补һ待补Σ待补ػ待补ѭ待补ˢ待补 */
+  let displayWarned = false;
+
+  /** 待补ȷ待补ϴ待补ڵ待补 Electron ·待补 Helper待补ÿֻ待补һ待补ֲ待补С待补ڣ待补 */
+  const launchHelper = (electronPath: string | undefined): void => {
+    if (helper || disposed) return;
+    if (!hasDesktopPet) return; // 待补޳待补ʾ待补棨display 待补 desktop/both待补
+    const port = typeof ctx.webServer?.port === 'number' ? ctx.webServer.port : 0;
+    if (!port || port <= 0) {
+      // webServer 待补δ待补ɼ待补OS 待补˿待补ʱ port 待补Ϊ 0待补ӳ待补ԡ待补
+      if (!startRetryTimer) {
+        startRetryTimer = setTimeout(() => {
+          startRetryTimer = undefined;
+          launchHelper(electronPath);
+        }, 500);
+        startRetryTimer.unref?.();
+      }
+      return;
+    }
+    const origin = `http://127.0.0.1:${port}`;
+    // 待补Ҽ待补վ待补ȥ待补 origin待补DSH ֻ待补 `GET /` 待补ܱ待补̵待补ƣ待补 authority 待补
+    // ǩ待补 Cookie待补һ待补 401 待补 Ĭ待补û待补и待补 authority 待补 Cookie ʱ待补Ȼ待补򲻿待补#87待补
+    // 待补Ƶȼ۵待补¼̬待补ֻ待补ӽ待补̻待补ݵ待补 helper 待补ڴ棬待补̡待补־待补authority 待补뱣待补
+    // 127.0.0.1待补 localhost 待补 Cookie待补ﴫ origin 待补ƴ待补ַ待补
+    const siteUrl = ctx.connection.authenticatedUrl(origin);
+    // 待补Ⱦ待补Ҳ待补ͬһ待补 handlePetRoute 待补ó待补Ʒ待补ã待补ÿֻ待补һ待补ֲ待补С待补ڣ待补ܵ待补 HTTP待补
+    // DSH Desktop 2.0.3+ 待补̵待补 HTTP 待补բ待补ֻ待补д待补Ƶ待补
+    const configUrl = `${origin}${ROUTE_PREFIX}/config`;
+    helper = new HelperProcess(
+      {
+        electronPath,
+        env: {
+          DSH_WHALE_CONFIG_URL: configUrl,
+          // 待补Ѽ待补Ȩվ待补 URL待补ƣ待补ֻ待补 helper 待补ġ待补վ待补ʹ待补ã待补κ待补־待补
+          DSH_WHALE_SITE_URL: siteUrl,
+          // 待补̬待补待补վ待补ȥ待补ͬ待补˵待补待补壩待补
+          //   desktop = 待补 DSH 待补Ӧ待补 待补 待补Ӧ待补ڣ待补helper 待补 dsh://open待补 main.js待补
+          //   site    = dsh web / 待补ģʽ 待补 ϵͳĬ待补վ待补㣨ԭ待补Ϊ待补ƻ待补
+          DSH_WHALE_OPEN_TARGET: isDesktopHost() ? 'desktop' : 'site',
+          DSH_WHALE_SCALE: '1',
+          // 待补 bridge Э待补飺main.js ע待补 dsh-whale-girl-bridge scheme待补Ⱦ待补󾭹ܵ待补ת待补
+          DSH_WHALE_BRIDGE: '1',
+          // ÿֻ待补һ待补ֲ待补С待补ڣ待补͸待补б待补[{id,size}]待补
+          DSH_WHALE_PETS: JSON.stringify(desktopPetList()),
+        },
+        // bridge Э待补鴦待补 = HTTP ·待补ͬһ待补 handlePetRoute待补ҵ待补߼待补Ψһ待补Ȼһ待补£待补
+        // 待补زĹ待补ļ待补·待补main.js 待补ж待补̣待补json/text 待补 body
+        bridgeHandler: async (req) => {
+          const result = await handlePetRoute(req.url ?? '/', req.method ?? 'GET', req.body);
+          if (result.kind === 'file') {
+            // file 待补֧待补 200待补404/400 待补 text 待补֧待补
+            return { id: req.id, status: 200, contentType: result.contentType, file: result.file };
+          }
+          if (result.kind === 'text') {
+            return { id: req.id, status: result.status, contentType: 'text/plain; charset=utf-8', body: result.body };
+          }
+          if (result.kind === 'buffer') {
+            // bridge 待补 JSON 待补Э待补飬待补˶待补ƣ待补洰待补 HTTP待补
+            // 待补ʽ待补Ƿ待补ؿ待补 body 待补 待补 body 待补ǰ待补Ϊ待补ϳɳɹ待补û待补
+            return {
+              id: req.id,
+              status: 501,
+              contentType: 'application/json; charset=utf-8',
+              body: JSON.stringify({ ok: false, reason: 'bridge-unsupported', message: '待补Ӧ待补 bridge待补 HTTP' }),
+            };
+          }
+          return {
+            id: req.id,
+            status: result.status,
+            contentType: 'application/json; charset=utf-8',
+            body: JSON.stringify(result.obj),
+          };
+        },
+      },
+      ctx.logger ?? console,
+    );
+    try {
+      helper.start();
+      ctx.logger?.info?.(`dsh-whale-girl desktop helper started (config: ${configUrl})`);
+    } catch (e) {
+      ctx.logger?.warn?.(`dsh-whale-girl desktop helper start failed: ${e instanceof Error ? e.message : String(e)}`);
+      helper = undefined;
+    }
+  };
+
+  /** 待补 Helper待补̽待补Ȿ待补 Electron待补ȱʧʱ待补첽待补
+   *  待补 spawn 待补ӽ待补̣待补CLI node 待补 DSH Desktop 待补ã待补ɺ待补Զ待补 */
+  const startHelper = (): void => {
+    if (helper || electronEnsure || disposed) return;
+    if (!hasDesktopPet) return; // 待补޳待补ʾ待补棨display 待补 desktop/both待补
+    // 待补ͼ待补ʾ待补Linux 待补 / 待补ֱ待补ӷ待补̽待补⡢待补ء待补
+    // 待补 Electron 待补ᡸ待补𼴱待补ػ待补ѭ待补ˢ待补 core dump待补
+    if (!hasGraphicalDisplay()) {
+      if (!displayWarned) {
+        displayWarned = true;
+        ctx.logger?.warn?.(
+          '[dsh-whale-girl] δ待补⵽ͼ待补ʾ待补DISPLAY/WAYLAND_DISPLAY 待补Ϊ待补գ待补' +
+            '待补ڳ待补ﲻ待补Ӱ待补죻待补ڷ待补ģʽ待补 Xvfb 待补 DSH_WHALE_DESKTOP_FORCE=1待补',
+        );
+      }
+      return;
+    }
+    const found = resolveElectronPath();
+    if (found) {
+      launchHelper(found);
+      return;
+    }
+    console.warn(`[dsh-whale-girl] Electron not found, downloading to ${defaultElectronExe()} ...`);
+    electronEnsure = ensureElectronDownload()
+      .then((path) => {
+        if (path) {
+          launchHelper(path);
+        } else {
+          console.warn(
+            '[dsh-whale-girl] Electron download failed; desktop pet unavailable. Set DSH_WHALE_ELECTRON_PATH and restart, or retry later.',
+          );
+        }
+      })
+      .finally(() => {
+        electronEnsure = undefined;
+      });
+  };
+
+  /** ֹͣ待补 Helper待补ã待补ٴ待补𣩡待补˳待补/待补ж待补·待补˸ɾ待补 stopAndWait待补 */
+  const stopHelper = (reason = 'settings-change'): void => {
+    if (startRetryTimer) {
+      clearTimeout(startRetryTimer);
+      startRetryTimer = undefined;
+    }
+    helper?.stop(reason);
+    helper = undefined;
+  };
+
+  /** ֹͣ待补**待补Ⱦ待补 helper 待补˳待补**待补ñ待补"ͣ待补"ר待补ã待补issue #64待补 */
+  const stopHelperAndWait = async (reason: string): Promise<void> => {
+    if (startRetryTimer) {
+      clearTimeout(startRetryTimer);
+      startRetryTimer = undefined;
+    }
+    const old = helper;
+    helper = undefined;
+    await old?.stopAndWait(reason);
+  };
+
+  /**
+   * 待补ã待补display / size 待补ȣ待补ؽ待补**待补Ⱦ待补 helper 待补˳待补**待补µġ待补
+   *
+   * ΪʲôҪ待补ȣ待补issue #64待补Electron 待补յ待补 SIGTERM 待补ش待补첽待补ģ待补 ms 待补𣩣待补"待补 kill 待补 spawn
+   * 待补½待补"待补þɴ待补ڣ待补ɴ待补С待补´待补ڣ待补´待补С待补ݹ待补桪待补û待补ľ待补"待补Сð待补ڶ待补ֻ待补"待补
+   * ΪʲôҪ待补У待补ᴥ待补ͬ待补ͬʱ待补 helper待补ö待补д待补
+   * 待补 rejected ״̬待补Ҳ待补 helper待补
+   */
+  let desktopSyncQueue: Promise<void> = Promise.resolve();
+  const syncDesktop = (): Promise<void> => {
+    desktopSyncQueue = desktopSyncQueue
+      .then(async () => {
+        refreshDesktop();
+        await stopHelperAndWait('desktop-config-change');
+        startHelper();
+      })
+      .catch((e: unknown) => {
+        ctx.logger?.warn?.(`[dsh-whale-girl] 待补 Helper ʧ待补ܣ待补${e instanceof Error ? e.message : String(e)}`);
+      });
+    return desktopSyncQueue;
+  };
+
+  /** 待补չ待补 待补 待补ز待补Ŀ¼待补webm 待补 webm/待补mov 待补 mov/待补ڶ待补Ŀ¼ƽ待补У待补 */
+  const animSubdirFor = (ext: string): string => (ext === '.mov' ? 'mov' : 'webm');
+
+  /** 待补ڶ待补زĸ待补չ待补ȡ待补Ŀ¼待补webm/ 待补mov/ 待补ʱΪ 404 待补ף待补 macOS 待补ά待补 */
+  const assetRootFor = (ext: string): string => join(PACKAGE_ROOT, 'assets', animSubdirFor(ext));
+
+  /** 待补û待补չ待补ȡ待补Ŀ¼待补main-animation/webm 待补 main-animation/mov待补 */
+  const userRootFor = (ext: string): string => join(thumbUserRoot, animSubdirFor(ext));
+
+  /** 待补ҵ待补·待补(WebServer ע待补 待补 HTTP 待补 / 待补 Helper 待补ܵ待补 待补 scheme Ӧ待补,待补ͬһ待补ʵ待补):
+   *  待补ֻ待补 rawUrl(/dsh-whale-girl/... + 待补ѯ) + method + body 待补ı待补;待补 RouteResult(JSON/待补ı待补/待补ļ待补),
+   *  待补ѷ待补̡待补ҵ待补߼待补ֻ待补һ待补,待补Ȼһ待补(Ӳ待补Լ:待补/待补Ϊ待补ϸ待补)待补 */
+  const handlePetRoute = async (rawUrl: string, method: string, body?: string): Promise<RouteResult> => {
+    const url = new URL(rawUrl, 'http://localhost');
+    const rest = decodeURIComponent(url.pathname.slice(ROUTE_PREFIX.length + 1));
+
+    // 待补Լ죺/dsh-whale-girl/diag待补GET待补
+    //
+    // ΪʲôҪ待补š待补ģ待补ô待补ʱ待补⿴待补429待补ֲ待补
+    // 待补û待补õ待补Ĭ待补ֵ待补ǡ待补Ѳ待补**待补**待补
+    // 待补Űڳ待补һ待补۾待补ܶ待补λ待补ֻ待补κ待补ⲿ待补á待补
+    if (rest === 'diag') {
+      let defaultSelection: unknown;
+      try {
+        defaultSelection = ctx.agentDefaultModel.currentSelection();
+      } catch (e) {
+        defaultSelection = { error: e instanceof Error ? e.message : String(e) };
+      }
+      let speech: unknown;
+      try {
+        const stt = ctx.get?.('speechToText', false) ?? ctx.speechToText;
+        const snap = stt?.snapshot?.();
+        speech = snap === undefined ? 'unavailable' : { selection: snap.selection, providers: snap.providers?.map((p: { id: string }) => p.id) };
+      } catch (e) {
+        speech = { error: e instanceof Error ? e.message : String(e) };
+      }
+      let modelCatalog: unknown;
+      try {
+        const llm = ctx.llm as { listProviders?: () => unknown[] } | undefined;
+        modelCatalog = llm?.listProviders?.()?.map((p) => (p as { id: string }).id);
+      } catch (e) {
+        modelCatalog = { error: e instanceof Error ? e.message : String(e) };
+      }
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          plugin: 'dsh-whale-girl',
+          routePrefix: ROUTE_PREFIX,
+          // 待补ؼ待补֣待补۲쵽待补ĻỰģ待补 / DSH Ĭ待补ģ待补 / 待补ս待补
+          observedSessionModel: observedSessionModel ?? null,
+          defaultSelection,
+          resolvedModel: resolveCurrentModel() ?? null,
+          llmProviders: modelCatalog,
+          speech,
+          voice: readVoiceConfig(),
+        },
+      };
+    }
+
+    // 待补Ʒ待补ã待补/dsh-whale-girl/config待补GET 待补ȡ待补ϲ待补Ʒ / PUT 待补û待补 / POST ͬ待补Ĭ待补ϣ待补
+    if (rest === 'config') {
+      if (method === 'GET') {
+        // Ψһ待补ڣ待补readAllConfig 待补ؾ待补ȷ待补Ʒ待补ۺϣ待补{ main:{...}, test1:{...} }待补
+        // 待补/待补/待补ҳֱ待补ѣ待补κ待补У待补/待补
+        try {
+          // 待补̬待补ñ待补ɱ待补棨待补 /state ͬ待补ھ待补Ѷ˻ᡸ待补ð汾待补仯 待补 待补 /config待补
+          // 待补һ待补 GET 待补л待补ͻ待补ûؾ待补ã待补׻待补ֱ待补ʧЧ待补
+          return {
+            kind: 'json',
+            status: 200,
+            obj: readAllConfig(configPaths),
+            headers: { 'cache-control': 'no-cache, no-store' },
+          };
+        } catch (e) {
+          return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+      if (method === 'PUT') {
+        try {
+          const parsed = JSON.parse(body ?? '');
+          // ͸待补ǰ待补ϵ待补û待补ļ待补ԭ待补󣬰ѷǰ待补ֶΣ待补physics/whisperPrompt/
+          // chatMemoryRounds/...待补ظ待补 saveUserConfig待补ҳ待补治待补Ĩ待补û待补ָĵľ待补á待补
+          // **待补 JSONC 待补̽待补**待补readUserConfig待补û待补ǡ待补ͬ待补д待补Ĵ待补 // ע待补
+          // 待补 config.jsonc ԭ待补ģ待补ϸ待补 JSON.parse 待补״待补̵待补 待补 existing 待补 undefined
+          // 待补 待补ؽ待补 待补 待补û待补ĸ߼待补ֶ待补ȫ待补 bug 待补ĸ待补·待补Զ待补ס待补
+          const existing = readUserConfig(configPaths);
+          const clean = saveUserConfig(parsed, existing);
+          if (!clean) {
+            return {
+              kind: 'json',
+              status: 400,
+              obj: {
+                error:
+                  'invalid pet config: expected { pets:[{name?,id,size,balanceEnabled,display,position:{corner,marginX,marginY}}] }待补display Ϊ web/desktop/both/none ֮һ待补ѡ待补 notificationsEnabled / whisperImageEnabled / chatImageEnabled 待补ѡ待补ﲼ待补 whisperEnabled / workStatusEnabled / fixedEnabled待补',
+              },
+            };
+          }
+          // 待补Ԥ待补죺待补û待补ڵ待补 JSONC 待补ˣ待补𻵣待补 **待补Ȳ待补д待补**待补
+          // 待补ǰ待补ؽ待补existing 待补͵待补ڰ待补ļ待补ʣ待补µ待补ݶ待补Ҿ待补Ĭ待补
+          // 待补Ի待补 409 待补ҳ待补ȡ待补 = 待补ļ待补ȷ待补 = 待补 ?force=1 ǿ待补ؽ待补
+          if (url.searchParams.get('force') !== '1' && userConfigUnparsable(configPaths)) {
+            return {
+              kind: 'json',
+              status: 409,
+              obj: { error: 'user config is unparsable', needConfirm: true, userFile: userConfigPath },
+            };
+          }
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(userConfigPath, JSON.stringify(clean, null, 2), 'utf8');
+          void syncDesktop(); // display/size 待补ȿ待补ܱ仯待补ؽ待补ﲢ待补 Helper待补첽待补Ӧ待补
+          // 待补Ӧ待补 = 待补**待补Ʒ待补ۺ待补**待补 GET /config ͬһ待补ݣ待补ֶ待补
+          // 待补ҳ待补ֱ待补ӽ待补 flattenConfigPets 待补ƽ待补Ⱦ待补ͻ待补˵待补Ŀ待补ֶ待补
+          // 待补/Ȩ待补/待补/待补״̬待补İ待补ֻ待补һ待补䣬待补еڶ待补ݲ待补ʵ待补֡待补
+          return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+        } catch {
+          return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+        }
+      }
+      if (method === 'POST') {
+        // ͬ待补Ĭ待补ã待补assets/config.jsonc ԭ待补ģ待补ע待补ͣ待补д待补û待补á待补
+        // 待补ǡ待补ָ待补Ĭ待补ϡ待补ϲ待补 = 待补Ĭ待补ϣ待补ָ待补û待补һ待补ݿ待补ֱ待补ӱ༭待补ã待补
+        // 待补Լ待补Ӱ待补ڸ待补һ待补ݣ待补 config.ts 待补 syncUserConfigFromDefault待补
+        try {
+          syncUserConfigFromDefault(configPaths);
+        } catch (e) {
+          // Ĭ待补ļ待补ȱʧ / 待补û待补Ŀ¼待补д待补ʽ 500待补Ĭ待补°待补ļ待补
+          return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+        }
+        void syncDesktop(); // 待补ñ待补ˣ待补ؽ待补ﲢ待补 Helper待补첽待补Ӧ待补
+        return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    // 待补ֻ待补ʾλ待补ã待补Ҽ待补ر待补ʾ待补 POST /pet-display待补
+    // 待补Ƶ待补ֻ待补 id + display 待补Ҫ待补÷待补ش待补 pets待补 PUT /config 待补̬待补
+    // 待补ͻ待补-待补-д待补ͬ待补Ҳ待补ò待补׼待补д待补һ待补㣩待补
+    // 待补ɷ待补˷待补飺id 待补ںϲ待补 mergePet 待补֤**ȫ待补Ψһ**待补ظ待补ʵ待补ᱻ待补ۺϣ待补
+    // 待补 findPetInstance 待补Ľ待补û待补壻待补ÿͻ待补˴待补 entry ֻ待补"待补ʵ待补"待补
+    // 待补ʧ待补棨待补ƽ待补װ待补 entry 待补¶待补ƴ待补ļ待补·待补룩待补
+    // д待补 PUT /config 待补ȫһ待补£待补saveUserConfig 待补ؽ待补 + existing ͸待补û待补ָĵ待补
+    // whisperPrompt / memes 待补ȷǰ待补ֶβ待补Ĩ待补 ./config 待补Ƕ待补 bug 待补ע待补ͣ待补
+    if (rest === 'pet-display') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let payload: { id?: unknown; display?: unknown };
+      try {
+        payload = JSON.parse(body ?? '') as { id?: unknown; display?: unknown };
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const petId = typeof payload.id === 'string' ? payload.id.trim() : '';
+      const nextDisplay = String(payload.display ?? '');
+      if (!petId) return { kind: 'json', status: 400, obj: { error: 'missing pet id' } };
+      if (!PET_DISPLAY_SET.has(nextDisplay)) {
+        return { kind: 'json', status: 400, obj: { error: `invalid display: ${nextDisplay}` } };
+      }
+      let merged: Record<string, Record<string, unknown>>;
+      try {
+        merged = readAllConfig(configPaths);
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+      // 待补в待补ֿ待补ܣ待补id 待补ڣ待补ʵ待补ںϲ待补ʱ**待补 id 待补Ŀ待补ظ待补**待补ǲ待补
+      // 待补ۺ待补待补ֶ待补ֻ待补ܻ待补 404待补ƾ id ȥ待补"Ӧ待补"待补ĸ待补ļ待补
+      const hit = findPetInstance(merged, petId);
+      if (!hit) return { kind: 'json', status: 404, obj: { error: `pet not found: ${petId}` } };
+      // Ŀ待补㣺main 待补 待补û待补ã待补 待补 待补ļ待补Լ待补ã待补.json 待补 .jsonc待补λͳһ待补 ./config待补
+      let layerPath: string;
+      let layerDir: string;
+      let existing: Record<string, unknown> | undefined;
+      if (hit.entry === 'main') {
+        layerPath = userConfigPath;
+        layerDir = userRoot;
+        existing = readUserConfig(configPaths);
+      } else {
+        const file = readPetConfigEntry(configPaths, hit.entry);
+        if (!file) {
+          return { kind: 'json', status: 404, obj: { error: `pet config file not found: ${hit.entry}` } };
+        }
+        layerPath = file.path;
+        layerDir = petConfigDir;
+        existing = file.raw;
+      }
+      // 待补滻待补壺saveUserConfig 待补ؽ待补 pets 待补飬待补**待补ò待补ȫ待补**待补ֻ待补Ŀ待补
+      // 待补ֻ待补 display 待补©待补 = 待补Ǵ待补ɾ待补
+      const layerPets = Array.isArray(hit.conf.pets) ? (hit.conf.pets as Record<string, unknown>[]) : [];
+      const pets = layerPets.map((p) => (String(p.id) === petId ? { ...p, display: nextDisplay } : p));
+      const clean = saveUserConfig({ pets }, existing);
+      if (!clean) return { kind: 'json', status: 400, obj: { error: 'invalid pet config' } };
+      try {
+        await mkdir(layerDir, { recursive: true });
+        await writeFile(layerPath, JSON.stringify(clean, null, 2), 'utf8');
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+      // 待补 await待补ߺܿ待补ܾ待补**待补ػ待补**待补 Helper待补 /reload ͬһ待补
+      // д待补Ѿ待补䶨待补Ҫ待补ظ待补÷待补
+      void syncDesktop();
+      // 待补Ӧ待补 = 待补Ķ待补**待补Ʒ待补ۺ待补**待补 PUT / POST /config ͬ待补Σ待补÷待补Ҽ待补˵待补
+      // ֱ待补Ӱ待补 petBridge.reload待补ٷ待补һ待补 GET /config 待补 待补ҳ待补ߵ待补ͬһ待补·待补
+      // Ҳ待补Ͳ待补õ待补ܳ¾ɵ待补ã待补ֳ待补֣待补ؾۺ待补ʱ待补Ҫˢ待补²待补Ч待补
+      return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+    }
+
+    // 待补ˡ待补á待补Ҽ待补˵待补 待补 POST /reload待补 Helper待补ȫ待补ﴰ待补ڰ待补ؽ待补
+    // 待补뱣待补**ͬһ待补**待补·待补syncDesktop待补ж待补 + 待补Ⱦɽ待补˳待补µģ待补
+    // 待补Գ待补 / display / size 待补ı仯ͬ待补Ч待补Ⱦ待补˾͵待补⼸待补
+    // 待补ÿֻ待补һ待补ڣ待补ʱ待补 DSH_WHALE_PETS 待补ģ待补
+    // ע待补⣺待补߾待补**待补Ǹ待补 helper**待补Ӧ待补֤待补ʹ待补˲待补 await 待补̻待补 200待补
+    if (rest === 'reload') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      void syncDesktop();
+      return { kind: 'json', status: 200, obj: { reloading: true } };
+    }
+
+    // 待补ļ待补·待补 + 待补洢λ待补嵥待补ҳ待补߼待补á待补롸ж待补洢待补չʾ待补ã待补
+    if (rest === 'config/meta') {
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          user: userConfigPath,
+          default: join(PACKAGE_ROOT, 'assets', 'config.jsonc'),
+          animations: thumbUserRoot,
+          memes: memesUserRoot,
+          // ȫ待补λ待补ã待补û待补 / Electron 待补ʱ / 待补˻待补 / 待补ػ待补 / 待补壩待补
+          // ǰ待补ֱ待补Ӵ待补ʵд待补뷽待补·待补ƴĿ¼待补
+          storage: storageEntries({
+            userDataRoot: userRoot,
+            electronDir: electronLandingDir(),
+            home: homedir(),
+            packageRoot: PACKAGE_ROOT,
+          }),
+          // profile 待补ƴж待补 dsh plugin --profile <待补> remove dsh-whale-girl待补Ʋ待补ʱΪ待补մ待补
+          profile: profileNameFrom(PACKAGE_ROOT) ?? '',
+        },
+      };
+    }
+
+    // 待补ѡģ待补嵥待补ҳ待补AI ģ待补͡待补Դ待补 DSH 待补Լ待补ģ待补ѡ待补**ͬԴ**待补
+    // 待补 llm 待补listProviders = 待补ע待补ʵʱ待补·待补ɣ待补listModels(provider) = 待补·待补µ待补ģ待补͡待补
+    // ֻ待补޸待补ã待补ĳ待补ģ待补ʧ待补ܣ待补֧待补 / 待补磩ֻ待补ţ待补Ͽ待补嵥待补
+    // 待补·待补һ待补ûע待补ʱ待补䵽 listConfigurableProviders待补õ待补·待补ɣ待补
+    // 待补š待补·待补ɵ待补ʧ待补ܻ待补ɲ待补Ļ待补䶵ס待补
+    if (rest === 'models') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const llm = ctx.llm as
+          | {
+              listProviders?: () => Array<{ id?: unknown; name?: unknown }>;
+              listConfigurableProviders?: () => Array<{ provider?: unknown; displayName?: unknown }>;
+              listModels?: (provider: string) => Promise<Array<{ id?: unknown; name?: unknown }>>;
+            }
+          | undefined;
+        const named = (id: unknown, name: unknown): { id: string; name: string } => {
+          const pid = String(id ?? '');
+          return { id: pid, name: String(name ?? '') || pid };
+        };
+        let providers = (typeof llm?.listProviders === 'function' ? llm.listProviders() : []).map((p) =>
+          named(p?.id, p?.name),
+        );
+        if (providers.length === 0 && typeof llm?.listConfigurableProviders === 'function') {
+          providers = llm.listConfigurableProviders().map((p) => named(p?.provider, p?.displayName));
+        }
+        providers = providers.filter((p) => p.id);
+        const catalog = await Promise.all(
+          providers.map(async (p) => {
+            let models: Array<{ id: string; name: string }> = [];
+            try {
+              const list = await llm?.listModels?.(p.id);
+              models = (Array.isArray(list) ? list : []).map((m) => named(m?.id, m?.name)).filter((m) => m.id);
+            } catch {
+              /* 待补в待补ģ待补ͣ待补ռ待补ɣ待补÷待补ֻ待补С待补浱ǰ待补Ի待补ѡ待补 */
+            }
+            return { ...p, models };
+          }),
+        );
+        return { kind: 'json', status: 200, obj: { providers: catalog } };
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    // 待补ѯͳһ״̬待补S待补/dsh-whale-girl/state待补GET待补no-cache待补ǰ待补 1s 待补ѯ待补**Ψһ**待补Դ
+    // 待补 / 待补״̬ / ֪ͨ / 待补˵待补״待补 ./state待补
+    // ֻ待补ڴ桢**待补㸱待补**待补ﴥ待补ⲿ待补û待补ģ待补ɡ待补ǻ待补˵待补 1s 待补ѯ待补
+    if (rest === 'state') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      return {
+        kind: 'json',
+        status: 200,
+        // ˳待补·待补ð汾待补˿待补֡待补ñ待补𴦸Ĺ待补Ҽ待补 display / 待补һ待补ǩҳ
+        // 待补 / 待补û待补ָ待补ļ待补 /config待补û待补˵ĸĶ待补Ҫˢ待补ҳ待补ſɼ待补
+        obj: { ...state.read(), configVersion: configVersion(configPaths) },
+        headers: { 'cache-control': 'no-cache, no-store' },
+      };
+    }
+
+    // 待补/dsh-whale-girl/balance待补POST = 待补ˢ待补һ待补β待补д待补 S待补 {ok}待补
+    // 待补˵㣬**待补**待补ֻ待补һ待补ڣ待补/state待补ֻ待补"待补ˢ待补"待补
+    // 待补ǰ待补 GET待补ֱ待补Ӳ待补+ /balance/trigger待补1s 待补ѯ待补˵㣬待补ɾ待补
+    // ǰ待补˲待补ٸ待补Զ待补ʱ待补host 待补ʱ待补ͳһ待补飬待补˹待补һ待补ݣ待补Ҳ待补Ҫ待补ѯ待补ת待补
+    if (rest === 'balance') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      await refreshBalance(true); // manual待补û待补Ҫ待补ģ待补待补ʱǰ待补˱ص待补˵待补
+      // ok ֻ待补ʾ"待补ˢ待补¶待补"待补待补Ƿ待补 S 待补 data 待补ok:false 待补ᵯ待补˵待补ݣ待补
+      return { kind: 'json', status: 200, obj: { ok: true } };
+    }
+
+    // 待补/dsh-whale-girl/whisper?pet=<id>待补POST = 待补˵һ待补䣬待补 {ok}待补
+    // 待补˵㣬**待补ı待补**待补ı待补 S 待补 pets.<id>.say待补/待补/待补Ի待补ظ待补ͬһ待补Ҷ待补ӣ待补
+    // 待补ֶ待补岻待补 whisperEnabled 待补ſأ待补Ǹ待补ֶ待补ֻ待补Զ待补ڣ待补ǰһ待补£待补
+    if (rest === 'whisper') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const petId = String(url.searchParams.get('pet') ?? '');
+      try {
+        const ok = await publishWhisper(petId);
+        return { kind: 'json', status: 200, obj: ok ? { ok: true } : { ok: false, reason: 'generate-error' } };
+      } catch (e) {
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // 待补Ͷι待补/dsh-whale-girl/broadcast?pet=<id>待补POST = 待补һ待补**待补ⲿ待补**待补ı待补д待补ݣ待补
+    // 待补 /whisper 待补**待补**待补÷待补Լ待补ı待补Ů待补Ѳ待补ȣ待补
+    // 待补˵待补Լ待补Ļ待补ʱ待补ͳ待补˸待补"ʵ待补"待补 issue #76待补
+    // д待补 S 待补 pets.<id>.say 待补 待补/待补Ի待补ظ待补**ͬһ待补Ҷ待补**待补 1s 待补Զ待补ʾ待补ǰ待补Ķ待补
+    // 待补˵㣬ֻ待补 {ok}待补ı待补 /state 待补
+    // У待补飨待补ͨ待补һ待补 HTTP 200 + ok:false待补 /chat 待补ʧ待补ܿھ待补һ待补£待补
+    //   text 待补trim 待补ǿգ待补**待补賤待补ƣ待补Ҳ待补Ƶ**待补Ƶ待补ɵ待补÷待补Լ待补𣩣待补
+    //   pet ȱʡ = 待补ǰ待补裨resolveActivePetId待补ʵ待补ڣ待补
+    //   image ֻ待补**待补ڱ待补**待补м待补淶待补ž待补ע待补ⲿ待补ַ待补
+    if (rest === 'broadcast') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(body ?? 'null');
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const o = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+      // 待补ı待补Ҫ待补þ待补ж待补ȶ待补·待补Ϊһ待补Ȼʧ待补ܵ待补ȥ待补
+      if (!normalizeBroadcastText(o.text)) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: 'text Ϊ待补' } };
+      }
+      try {
+        const cfg = readAllConfig(configPaths);
+        const d = decideBroadcast({
+          cfg,
+          requested: String(url.searchParams.get('pet') ?? ''),
+          active: resolveActivePetId(),
+          text: o.text,
+          image: o.image,
+          memeDirs: memeDirsFor,
+        });
+        if (!d.ok) return { kind: 'json', status: 200, obj: { ok: false, reason: d.reason, message: d.message } };
+        state.writePet(d.petId, 'say', d.image ? { text: d.text, image: d.image } : { text: d.text });
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        // 待补ö待补ȡʧ待补ܵȣ待补װ待补𻵣待补 待补ʽʧ待补ܣ待补Ĭ
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // 待补㲥待补/dsh-whale-girl/anim?pet=<id>待补POST = 待补貥һ待补ָ待补
+    // Ч待补Ҽ待补˵待补㡸待补**待补ȫһ待补**待补˶待补ͬһ待补˵待补
+    // 待补 handleMenuAction / 待补 sprite.onMenuAction待补ֻ待补͵待补
+    // д待补 S 待补 pets.<id>.anim 待补 ǰ待补 1s 待补ڷ待补 counter 待补仯待补Դ待补ţ待补**待补ּ待补ļ待补**待补
+    // 待补˵㣬ֻ待补 {ok}待补
+    // У待补飨待补ͨ待补һ待补 HTTP 200 + ok:false待补˵待补ھ待补һ待补£待补
+    //   name 待补trim 待补ǿգ待补ұ待补ڸó待补 animations 待补ܵ㵽待补ļ待补
+    //   待补Ŷ˶Բ待补ڵĶ待补û待补ж待补ף待补ּ待补ļ待补 待补 404 待补 待补ʧ待补 待补 待补Ϊ"待补û待补Ӧ"待补
+    //    待补Ա待补ס待补д待补 S 待补ǰ待补˰待补һ待补ˣ待补
+    //   pet ȱʡ = 待补ǰ待补裨resolveActivePetId待补ʵ待补ڡ待补
+    if (rest === 'anim') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(body ?? 'null');
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const o = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+      try {
+        const cfg = readAllConfig(configPaths);
+        const d = decideAnim({
+          cfg,
+          requested: String(url.searchParams.get('pet') ?? ''),
+          active: resolveActivePetId(),
+          name: o.name,
+        });
+        if (!d.ok) return { kind: 'json', status: 200, obj: { ok: false, reason: d.reason, message: d.message } };
+        state.writePet(d.petId, 'anim', { name: d.name });
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        // 待补ö待补ȡʧ待补ܵȣ待补װ待补𻵣待补 待补ʽʧ待补ܣ待补Ĭ
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // 待补Ի待补/dsh-whale-girl/chat?pet=<id>
+    //   GET  待补 待补䴰待补ڣ待补β chatMemoryRounds 待补֣待补ʱչʾ待补һ待补Զ待补ѯ待补
+    //   POST 待补 Я待补ʷ待补ɻظ待补д待补䣻**ֻ待补 {ok}**待补ظ待补 S 待补 pets.<id>.say
+    // 待补Ψһ待补д待补 = host待补memory.json待补/待补˶待补ֻ待补ǿͻ待补ˣ待补
+    // ͬһʵ待补Ȼ待补ͬһ待补ݼ待补䣻待补ļ待补ȫ待补治ɾ待补
+    // 待补ֻ待补β待补 chatMemoryRounds 待补֣待补1 待补 = 1 待补 1 待补𣻺ϲ待补Ѱ待补Ŀ待补Ĭ待补ϣ待补
+    if (rest === 'chat') {
+      const petId = String(url.searchParams.get('pet') ?? '');
+      try {
+        if (method === 'GET') {
+          const cfg = readAllConfig(configPaths);
+          const mem = await readMemory();
+          const bucket = mem[findPetInstance(cfg, petId)?.entry ?? petId] ?? {};
+          const list = (bucket[petId]?.messages ?? []).slice();
+          const rounds = memoryRounds(petId, cfg);
+          // 待补 chatWithPet ͬһ待补壺rounds = 0 待补 待补ʷ待补slice(-0) 待补᷵待补飬待补ϣ待补
+          const messages = sliceMemoryRounds(list, rounds);
+          return { kind: 'json', status: 200, obj: { ok: true, messages, rounds } };
+        }
+        if (method === 'POST') {
+          const parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+          const text = typeof parsed.text === 'string' ? parsed.text.trim() : '';
+          if (!text) {
+            return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: '待补ϢΪ待补' } };
+          }
+          if (text.length > 2000) {
+            return {
+              kind: 'json',
+              status: 200,
+              obj: { ok: false, reason: 'bad-request', message: '待补Ϣ待补 2000 待补֣待补' },
+            };
+          }
+          const result = await chatWithPet(petId, text);
+          return { kind: 'json', status: 200, obj: result };
+        }
+        return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      } catch (e) {
+        // 待补 readAllConfig 待补֤待补ȷ待补 config-error 待补֧待补ࣨIO/LLM待补 generate-error
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // 待补 待补׷待补٣待补ֻ待补ʱ待补ã待补
+    // POST /dsh-whale-girl/voice/trace  {step, detail}
+    // ׷待补һ待补 JSONL 待补 $DSH_HOME/dsh-whale-girl/voice-trace.log待补
+    //
+    // Ϊʲô待补Ҫ待补·待补**ǰ待补**待补кܶಽ待补豸待补¼待补ϳɡ待补ţ待补
+    // 待补κ待补һ待补Ĭʧ待补ܶ待补Ϊ待补û待补Ӧ待补̨待补˲待补㿴待补
+    // 待补ļ待补һ待补 GET 待补ܿ待补ߵ待补һ待补ϵġ待补
+    // GET  /dsh-whale-girl/voice/trace  待补 待补 60 待补У待补ã待补
+    if (rest === 'voice/trace') {
+      const file = join(userRoot, 'voice-trace.log');
+      if (method === 'GET') {
+        let lines: string[] = [];
+        try {
+          lines = readFileSync(file, 'utf8').split('\n').filter((l) => l !== '').slice(-60);
+        } catch {
+          /* û待补־ = 待补û待补ܹ待补 */
+        }
+        return { kind: 'json', status: 200, obj: { ok: true, lines } };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const line = JSON.stringify({
+          at: new Date().toISOString(),
+          step: String(parsed.step ?? ''),
+          detail: parsed.detail === undefined ? undefined : parsed.detail,
+        });
+        await mkdir(userRoot, { recursive: true });
+        await appendFile(file, line + '\n', 'utf8');
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    // 待补 待补򣨿待补Ļ 待补 待补һ待补 待补 待补֣待补
+    //   GET  /autoplay/config      待补 待补 + 待补ͣ״̬
+    //   POST /autoplay/config      待补 待补ã待补ؽ待补
+    //   POST /autoplay/run         待补 待补һ待补֣待补ʱֻ待补ӡ待补ƻ待补
+    //   POST /autoplay/resume      待补 待补ֶ待补ָ待补ͣ
+    //   POST /autoplay/stop        待补 待补ֶ待补ͣ
+    //   GET  /autoplay/foreground  待补 待补ǰǰ̨待补ڱ待补⣨待补
+    if (rest.startsWith('autoplay/')) {
+      const sub = rest.slice('autoplay/'.length);
+
+      if (sub === 'config') {
+        if (method === 'GET') {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: true, config: readAutoplayConfig(), estop: autoplayEstop.snapshot() },
+          };
+        }
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          const current = readAutoplayConfig();
+          const next: AutoplayConfig = normalizeAutoplayConfig({
+            enabled: typeof patch.enabled === 'boolean' ? patch.enabled : current.enabled,
+            dryRun: typeof patch.dryRun === 'boolean' ? patch.dryRun : current.dryRun,
+            estopKey: typeof patch.estopKey === 'string' ? patch.estopKey : current.estopKey,
+            windowTitles: Array.isArray(patch.windowTitles)
+              ? (patch.windowTitles as unknown[]).filter((v): v is string => typeof v === 'string')
+              : current.windowTitles,
+          });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          // 待补˼待补ͣ待补Ҫ待补ؽ待补
+          await rearmAutoplay(next);
+          if (!next.enabled && autoplaySession !== undefined) await endAutoplaySession();
+          return { kind: 'json', status: 200, obj: { ok: true, config: next, estop: autoplayEstop.snapshot() } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+      if (sub === 'run') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        const conf = readAutoplayConfig();
+        if (!conf.enabled) {
+          return { kind: 'json', status: 200, obj: { kind: 'skipped', reason: 'disabled' } };
+        }
+        return { kind: 'json', status: 200, obj: await runAutoplayOnce(conf) };
+      }
+
+      if (sub === 'resume') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        autoplayEstop.resume();
+        return { kind: 'json', status: 200, obj: { ok: true, estop: autoplayEstop.snapshot() } };
+      }
+
+      if (sub === 'stop') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        autoplayEstop.stop('manual');
+        return { kind: 'json', status: 200, obj: { ok: true, estop: autoplayEstop.snapshot() } };
+      }
+
+      if (sub === 'foreground') {
+        if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        try {
+          return { kind: 'json', status: 200, obj: { ok: true, title: await foregroundWindowTitle() } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+      // 待补 待补ִ待补У待补֤待补ڣ待补
+      //   POST /autoplay/task { text, cwd? }
+      //   待补 待补񱾵待补ִ待补У待补 DSH 待补½待补Ựִ待补
+      //
+      // 待补·待补**待补֤待补**待补ȷ待补Ͻ待补Ự待补Ŀ待补У待补·待补ӡ待补
+      if (sub === 'task') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        try {
+          const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+          const text = typeof patch.text === 'string' ? patch.text.trim() : '';
+          const routed = routeTask(text);
+          if (routed.kind === 'self') {
+            return { kind: 'json', status: 200, obj: { ok: true, route: 'self', action: routed.action, reason: routed.reason } };
+          }
+          if (routed.kind === 'chat') {
+            return { kind: 'json', status: 200, obj: { ok: true, route: 'chat', reason: routed.reason } };
+          }
+          const sel = resolveCurrentModel();
+          const created = await createTaskSession(
+            ctx.get('agents', false) as Parameters<typeof createTaskSession>[0],
+            routed.prompt,
+            {
+              ...(typeof patch.cwd === 'string' && patch.cwd !== '' ? { cwd: patch.cwd } : {}),
+              ...(sel === undefined ? {} : { provider: sel.provider, model: sel.model }),
+            },
+          );
+          return { kind: 'json', status: 200, obj: { ...created, route: 'session', reason: routed.reason } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+
+
+    // 待补ݿ待补أ待补Ҽ待补˵待补ֱ待补ӷ待补ת待补ʶ待补û待补ҳ
+    if (rest === 'sight/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readSightConfig();
+      const next = { ...current, enabled: !current.enabled };
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      armSightTimer(); // 待补̰待补״̬待补Ŷ待补ʱ待补
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+
+    // 待补 待补Ϸ待补 + 待补ֻỰ 待补
+    //   GET  /autoplay/games   待补 ȫ待补
+    //   POST /autoplay/games   待补 待补һ待补ݣ待补title/genre/keys/notes待补
+    //   POST /autoplay/guide   待补 待补鹥待补Բ待补д待补
+    //   GET  /autoplay/session 待补 待补ֽ待补
+    //   POST /autoplay/end     待补 待补֣待补ѹ待补ü待补䣩
+    if (rest === 'autoplay/games') {
+      if (method === 'GET') {
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: true, games: await readGames(), genreCaps: GENRE_MEMORY_CAP },
+        };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const profile = normalizeProfile(patch as Partial<GameProfile>);
+        await writeGame(profile);
+        return { kind: 'json', status: 200, obj: { ok: true, game: profile } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    if (rest === 'autoplay/guide') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const title = typeof patch.title === 'string' ? patch.title.trim() : '';
+        const result = await searchGuide(ctx.get('web', false) as Parameters<typeof searchGuide>[0], title);
+        if (!result.ok) return { kind: 'json', status: 200, obj: result };
+        // д待补ͬ待补û待补о待补½待补һ待补ݣ待补
+        const games = await readGames();
+        const existing = games.find((g) => g.title === title || g.id === profileIdFromTitle(title));
+        const merged = normalizeProfile({
+          ...(existing ?? { title, genre: 'custom' }),
+          title,
+          guide: { query: result.query, summary: result.summary, sources: result.sources, atMs: result.atMs },
+        });
+        await writeGame(merged);
+        return { kind: 'json', status: 200, obj: { ok: true, guide: result, game: merged } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    if (rest === 'autoplay/session') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          session:
+            autoplaySession === undefined
+              ? null
+              : {
+                  gameTitle: autoplaySession.gameTitle,
+                  steps: autoplaySession.steps.length,
+                  cap: autoplaySession.cap,
+                  startedAt: autoplaySession.startedAt,
+                },
+        },
+      };
+    }
+
+    if (rest === 'autoplay/end') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const ended = await endAutoplaySession();
+      return { kind: 'json', status: 200, obj: { ok: true, ended: ended ?? null } };
+    }
+
+    // 待补ݿ待补أ待补ת待补򡹣待补Ҽ待补˵待补ã待补
+    if (rest === 'autoplay/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readAutoplayConfig();
+      const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: !current.enabled });
+      // 待补ص待补 =待补֡待补ѻỰѹ待补ü待补䣬Ȼ待补ջ待补
+      if (!next.enabled) void endAutoplaySession();
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      await rearmAutoplay(next); // 待补ر待补Ҫ待补ͣ待补ͣ待补
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+      return { kind: 'json', status: 404, obj: { error: 'unknown autoplay route' } };
+    }
+
+    // 待补 待补ʶ待补Ļ待补待补
+    //   GET  /sight/config   待补 待补ǰ待补 + 待补ռ待补
+    //   POST /sight/config   待补 待补ã待补ؽ待补
+    //   POST /sight/run      待补 待补̿待补һ待补Σ待补ֶ待补ȶ待补ʱ待补
+    //   GET  /sight/snapshot/<file> 待补 ȡһ待补ſ待补գ待补ҳ待补˶ԡ待补ʲô待补
+    if (rest === 'sight/config') {
+      if (method === 'GET') {
+        const usage = await snapshotUsage(sightSnapshotsRoot);
+        const conf = readSightConfig();
+        // 待补**ʵ待补ʻ待补õ待补ʶͼģ待补**һ待补𷵻أ待补ҳҪ待补ʾ待补˭待补ʶ待补𡹡待补
+        // 待补ֻ待补Ի待补ģ待补͡待补ĸ待补֣待补֪待补䵽待补ļң待补Ҳ待补û待补ж待补յ待补˭待补Ǯ待补
+        const resolvedVision = resolveVisionModel();
+        return {
+          kind: 'json',
+          status: 200,
+          obj: {
+            ok: true,
+            config: conf,
+            snapshots: usage,
+            dir: sightSnapshotsRoot,
+            visionModelResolved: resolvedVision ?? null,
+          },
+        };
+      }
+      if (method === 'POST') {
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          // 待补ؽ待补ֻ待补֪待补ֶΣ待补Ͳ待补Ծ待补õ待补ǰֵ
+          const current = readSightConfig();
+          const next: SightConfig = normalizeSightConfig({
+            enabled: typeof patch.enabled === 'boolean' ? patch.enabled : current.enabled,
+            intervalSec: Number(patch.intervalSec ?? current.intervalSec),
+            keepSnapshots: Number(patch.keepSnapshots ?? current.keepSnapshots),
+            changeThreshold: Number(patch.changeThreshold ?? current.changeThreshold),
+            speak: typeof patch.speak === 'boolean' ? patch.speak : current.speak,
+            mode: typeof patch.mode === 'string' ? (patch.mode as SightMode) : current.mode,
+            windowTitle: typeof patch.windowTitle === 'string' ? patch.windowTitle : current.windowTitle,
+          });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          // 待补ø待补Ŷ待补ʱ待补õ待补һ待补
+          armSightTimer();
+          return { kind: 'json', status: 200, obj: { ok: true, config: next } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    if (rest === 'sight/run') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const round = await runSightOnce();
+      return { kind: 'json', status: 200, obj: round };
+    }
+
+
+    // GET /sight/snapshot/<file> 待补 ȡһ待补ſ待补գ待补ҳ待补˶ԡ待补ʲô待补
+    if (rest.startsWith('sight/snapshot/')) {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const name = rest.slice('sight/snapshot/'.length);
+      // ֻ待补 .jpg 待补Ҳ待补·待补ָ待补Ŀ¼待补Խ
+      if (!name.endsWith('.jpg') || name.includes('/') || name.includes('\\')) {
+        return { kind: 'json', status: 400, obj: { error: 'bad snapshot name' } };
+      }
+      try {
+        const buf = await readFile(join(sightSnapshotsRoot, name));
+        return { kind: 'file', status: 200, contentType: 'image/jpeg', body: buf };
+      } catch {
+        return { kind: 'json', status: 404, obj: { error: 'snapshot not found' } };
+      }
+    }
+    // 待补 Ӧ待补ñ待补ɲ待补ġ待补
+    //   GET  /apps/aliases 待补 待补ǰ待补Ч待补
+    //   POST /apps/aliases 待补 待补û待补ñ待补ϲ待补
+    if (rest === 'apps/aliases') {
+      if (method === 'GET') {
+        return { kind: 'json', status: 200, obj: { ok: true, aliases: readAppAliases(), defaults: DEFAULT_APP_ALIASES } };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const next: Record<string, string> = {};
+        for (const [k, v] of Object.entries(patch)) {
+          if (typeof v === 'string' && k.trim() !== '' && v.trim() !== '') next[k.trim()] = v.trim();
+        }
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(appsPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+        return { kind: 'json', status: 200, obj: { ok: true, aliases: readAppAliases() } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    // 待补ݿ待补أ待补ת待补
+    if (rest === 'autoplay/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readAutoplayConfig();
+      const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: !current.enabled });
+      // 待补ص待补 =待补֡待补ѻỰѹ待补ü待补䣬Ȼ待补ջ待补
+      if (!next.enabled) void endAutoplaySession();
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      await rearmAutoplay(next); // 待补ر待补Ҫ待补ͣ待补ͣ待补
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+
+    if (rest === 'sight/snapshots') {
+      // 待补嵥待补ҳ待补ͼ待补ã待补ֻ待补ļ待补
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let files: string[] = [];
+      try {
+        files = (await readdir(sightSnapshotsRoot)).filter((n) => n.endsWith('.jpg')).sort();
+      } catch {
+        /* Ŀ¼待补 待补 待补嵥 */
+      }
+      return { kind: 'json', status: 200, obj: { ok: true, files } };
+    }
+
+    if (rest.startsWith('sight/snapshot/')) {
+      // ֻ待补ȡ待补Ŀ¼待补ļ待补ֱ待补 .jpg 待补Ҳ待补ָ待补Խ待补
+      const name = rest.slice('sight/snapshot/'.length);
+      if (name === '' || name.includes('/') || name.includes('\\') || !name.endsWith('.jpg')) {
+        return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid snapshot name' };
+      }
+      const file = join(sightSnapshotsRoot, name);
+      if (!existsSync(file)) return { kind: 'text', status: 404, body: 'dsh-whale-girl: snapshot not found' };
+      return { kind: 'file', file, contentType: 'image/jpeg' };
+    }
+
+    // 待补 待补ã待补д voice.json待补
+    // Ϊʲô待补 config.jsonc待补Ƿ待补ϸ待补ֶ待补У待补롸待补滻待补壬
+    // 待补·待补ɫ待补ݼ待补ȥ待补á待补÷Ƿ待补 待补 待补ﲻ待补ʾ待补
+    // ǣ待补ֳ待补ļ待补Ӱ待补졣
+    if (rest === 'voice/config') {
+      if (method === 'GET') {
+        return { kind: 'json', status: 200, obj: { ok: true, ...readVoiceConfig() } };
+      }
+      if (method === 'POST') {
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          // ֻ待补֪待补ֶΣ待补ֻ待补ܷǿ待补ַ待补 待补 待补ؽ待补д待补û待补Ŀ¼
+          const current = readVoiceConfig();
+          const next: Record<string, string> = { voice: current.voice, rate: current.rate };
+          if (current.pythonPath !== undefined) next.pythonPath = current.pythonPath;
+          if (current.language !== undefined) next.language = current.language;
+          if (current.shortcut !== undefined) next.shortcut = current.shortcut;
+          if (current.micDeviceId !== undefined) next.micDeviceId = current.micDeviceId;
+          if (current.hideButton !== undefined) next.hideButton = current.hideButton;
+          for (const key of ['voice', 'rate', 'pythonPath', 'language', 'shortcut', 'micDeviceId', 'hideButton'] as const) {
+            const value = patch[key];
+            if (typeof value === 'string' && value.trim() !== '') next[key] = value.trim();
+            else if (value === '') delete next[key];
+          }
+          // 待补 promises 待补棨待补ļ待补ѵ待补 mkdir/writeFile待补ͬ待补û待补е待补룬
+          // ֮ǰ待补д待补 mkdirSync待补һ待补ͱ待补 "mkdirSync is not defined"待补
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(join(userRoot, 'voice.json'), JSON.stringify(next, null, 2) + '\n', 'utf8');
+          return { kind: 'json', status: 200, obj: { ok: true, ...readVoiceConfig() } };
+        } catch (e) {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: false, message: e instanceof Error ? e.message : String(e) },
+          };
+        }
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    // 待补 待补 待补
+    // 待补˵㣬待补Ϊ待补ǰ待补ܰ待补ϡ待补ÿһ待补ʧ待补ʱ待补ͬ待补˻待补
+    //   POST /voice/asr   {audio:<base64 wav>}         待补 {ok,text}      ʶ待补
+    //   POST /voice/turn  {audio:<base64 wav>, pet?}   待补 {ok,userText,reply}  ʶ待补 + 待补ɻظ待补䣩
+    //   POST /voice/tts   {text, voice?, rate?}        待补 audio/mpeg     待补ϳ待补
+    //
+    // Ϊʲô /turn 待补ֱ待补Ƶ待补ظ待补ı待补Ҫ待补/待补Ļ待补󲥣待补
+    // 待补һ待补Ӧ待补ǰ待补ڡ待补ı待补ѵ待补Ƶû待补ʱ待补޷待补ʾ待补
+    //
+    // Ϊʲô TTS 待补˵㣺ͬһ待补ظ待补Ҫ待补ز待补ϳɡ待补롸待补Ի待补
+    // 待补ز待补һ待补 LLM待补
+    if (rest === 'voice/asr' || rest === 'voice/turn' || rest === 'voice/tts') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+      } catch {
+        return { kind: 'json', status: 400, obj: { ok: false, reason: 'bad-request', message: 'invalid JSON body' } };
+      }
+
+      // 待补ɫ/待补/待补 voice.json 待补︲待补ǣ待补ȱʡһ待补İ待补ֵ
+      const voiceCfg = readVoiceConfig();
+
+      if (rest === 'voice/tts') {
+        const text = typeof parsed.text === 'string' ? parsed.text : '';
+        const tts = await synthesize(userRoot, text, {
+          voice: typeof parsed.voice === 'string' ? parsed.voice : voiceCfg.voice,
+          rate: typeof parsed.rate === 'string' ? parsed.rate : voiceCfg.rate,
+          pythonPath: voiceCfg.pythonPath,
+        });
+        if (!tts.ok) {
+          return { kind: 'json', status: 200, obj: { ok: false, reason: tts.reason, message: tts.message } };
+        }
+        // 待补洰待补 bridge ȡ待补Ƶ待补bridge 待补 JSON 待补Э待补飬待补˶待补ƣ待补
+        // 待补ṩ base64 待补̬待补`?encoding=base64`待补Ⱦ待补Լ待补 Blob 待补š待补
+        // 待补Ĭ待补ϵĶ待补Ӧ待补ʡ待补ڴ棩待补
+        if (url.searchParams.get('encoding') === 'base64') {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: true, mime: tts.mime, audio: Buffer.from(tts.audio).toString('base64') },
+          };
+        }
+        return { kind: 'buffer', status: 200, body: tts.audio, contentType: tts.mime };
+      }
+
+      // asr / turn 待补Ҫ待补Ƶ
+      const audio = typeof parsed.audio === 'string' ? decodeAudioBase64(parsed.audio) : undefined;
+      if (audio === undefined) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: 'ȱ待补ٻ待补޷待补 audio' } };
+      }
+      const asr = await transcribe(ctx, audio, { language: voiceCfg.language });
+      if (!asr.ok) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: asr.reason, message: asr.message } };
+      }
+      if (rest === 'voice/asr') {
+        return { kind: 'json', status: 200, obj: { ok: true, text: asr.text, audioSeconds: asr.audioSeconds } };
+      }
+
+      // turn待补ʶ待补ֱ待补 /chat 待补ȫ待补ͬ待补·待补ͬһ待补/待补/待补䵽待补ǰģ待补ͣ待补
+      const requested = String(parsed.pet ?? '');
+      const petId = requested.trim() === '' ? resolveActivePetId() : requested;
+      if (!petId) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'no-pet', message: 'û待补пɶԻ待补ĳ待补' } };
+      }
+      // 待补 待补ָ待补待补ϳ待补ֱ待补ִ待补У待补ģ待补 待补
+      //
+      // 待补Ҫ待补ǡ待补ܲٿ待补һ待补С待补ء待补֡待补Ӧ待补á待补Լ待补顣
+      // 待补Щȷ待补߱待补ع待补򣨺待补뼶待补0 待补ɱ待补ֻ待补ϲ待补ʱ待补ŵ待补ġ待补
+
+      // 待补 待补Ϣ待补ȷ待补ϣ待补ȼ待补
+      //
+      // 待补˵待补"待补"待补İ待补ȥ待补˵"待补"待补Ͷ待补
+      // 待补ǰ待补棺待补̫待补׳待补ڱ待补ľ待补待补ȴ待补
+      if (pendingMessage !== undefined) {
+        if (isConfirm(asr.text)) {
+          const done = await executePendingMessage();
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'send' } };
+        }
+        if (isCancel(asr.text)) {
+          pendingMessage = undefined;
+          const done = '待补ã待补ˡ待补';
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'send' } };
+        }
+      }
+
+      const intent = parseVoiceIntent(asr.text);
+      if (intent !== undefined) {
+        const done = await runVoiceIntent(intent, petId);
+        if (done !== undefined) {
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, intent: intent.kind } };
+        }
+      }
+      // 待补 待补Щ待补ָ待补待补Ϳ待补ǲ待补"待补Ļ待补"待补
+      //
+      // 待补һ待补**待补**待补ֻ待补 parseVoiceIntent待补/待补Ӧ待补/待补ѣ待补
+      // 待补񡸴待补΢待补Ÿ待补ĳ待补˷待补Ϣ待补DSH待补½待补Ŀ待补ת待补̡待补ͨ待补졪待补
+      // 待补ģ待补˼待补һ待补仰待补ʲô待补û待补"待补Ӧ待补ȴûִ待补"待补ĸ待补
+      if (intent === undefined) {
+        const routed = routeTask(asr.text);
+        if (routed.kind === 'self') {
+          const done = await runSelfAction(routed.action);
+          if (done !== undefined) {
+            // д待补ݣ待补ֱ待补 return待补ֻ待补 reply 待补÷待补
+            // 待补Ҷ待补ûд待补õ待补˵待补ȴ待补֡待补
+            state.writePet(petId, 'say', { text: done });
+            return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'self' } };
+          }
+        } else if (routed.kind === 'session') {
+          // ֻ待补ȷ˵待补ˡ待补½待补Ŀ/待补½待补Ự/待补DSH待补Ž待补Ự
+          // 待补ࣨchat待补ȥ待补Ի待补ͻ待补
+          const sel = resolveCurrentModel();
+          const created = await createTaskSession(
+            ctx.get('agents', false) as Parameters<typeof createTaskSession>[0],
+            routed.prompt,
+            sel === undefined ? {} : { provider: sel.provider, model: sel.model },
+          );
+          const reply = created.ok
+            ? `待补ã待补 DSH 待补˸待补Ựȥ待补${created.title}`
+            : `û待补ܿ待补Ự待补${created.message}`;
+          state.writePet(petId, 'say', { text: reply });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply, audioSeconds: asr.audioSeconds, route: 'session' } };
+        }
+      }
+
+      // 待补 待补Ի待补ġ待补ʶ待补
+
+      // 待补 待补Ի待补ġ待补ʶ待补
+      //
+      // 待补ԭ待补ڸ待补待补ֻ待补Ӧ待补Լ待补ȥ待补һ待补ٴ𣬶待补Ϲ待补¡待补
+      // 待补ÿ待补䶼待补̫待补԰待补 sight.json 待补ĵ待补λ待补жϣ待补
+      //   off   待补Ӳ待补 / auto 待补йؼ待补ʲſ待补 / always ÿ待补ֶ待补
+      // ֡待补Ҳ待补ɵ待补1 = 待补ʡ待补3~5 = 待补ܿ待补仯待补
+      //
+      // 待补Ľ待补д待补䣨ֻ待补һ待补ģ待补ʡ待补ðѽ待补ͼ待补Ի待补ʷ待补
+      const sightConf = readSightConfig();
+      let preSight: { note: string; images: Uint8Array[] } | undefined;
+      if (shouldLookAtScreen(asr.text, sightConf.voiceVision)) {
+        try {
+          const plan = framePlan(sightConf.voiceFrames, sightConf.voiceFrameGapMs);
+          const frames = await captureFrames(plan.count, plan.gapMs);
+          preSight = {
+            note: frameCaption(plan.count, plan.gapMs),
+            images: frames.map((f) => Uint8Array.from(Buffer.from(f.dataUrl.split(',')[1] ?? '', 'base64'))),
+          };
+          console.log(`[dsh-whale-girl] 待补Ի待补ʶ待补${plan.count} ֡待补λ ${sightConf.voiceVision}待补`);
+        } catch (e) {
+          // 待补һ待补ʧ待补ܲ待补Ӱ待补Ի待补Ȼ待补ֻ待补ֻش待补
+          console.warn('[dsh-whale-girl] 待补ʶ待补ʧ待补ܣ待补ı待补' + (e instanceof Error ? e.message : String(e)));
+        }
+      }
+
+      // 待补Ѿ待补³待补 chatWithPet 待补待补ͬһ待补ֻ待补ѽ待补ת待补ȥ待补
+      // 待补Ի待补**待补**待补洰待补待补÷待补Լ待补ϳɲ待补ţ待补ͬһ待补䲥待补
+      const final = await chatWithPet(petId, asr.text, undefined, false, preSight);
+
+      if (!final.ok) return { kind: 'json', status: 200, obj: final };
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          userText: asr.text,
+          reply: final.text ?? '',
+          audioSeconds: asr.audioSeconds,
+          ...(final.fellBackTo === undefined ? {} : { fellBackTo: final.fellBackTo }),
+        },
+      };
+    }
+
+    // 待补ļ待补/dsh-whale-girl/thumb/<待补زĸ待补>/<file>待补չ待补 webm待补Ĭ待补ϣ待补/ mov待补macOS 待补ƣ待补
+    // 待补زĹ待补Ƿ待补ڸó待补Ķ待补ز待补Ŀ¼ `pet/<petId>-animation/`待补ж待补
+    //   - 待补ڣ待补pet pack 待补待补ֻ待补Լ待补Ŀ¼待补鲻待补 404 待补ʽ待补
+    //   - 待补ڣ待补**待补ó待补**待补main 待补û待补ӵ待补ֻ待补ز待补
+    //     main-animation/<webm|mov> 待补 待补 待补 assets/<webm|mov>待补޹أ待补ֻ待补ã待补
+    // mov待补HEVC-with-Alpha待补Ϊ macOS Safari/WKWebView 待补Ƹ待补ʽ待补Ĭ待补ϲ待补
+    // 待补û待补 GitHub Release待补assets-mov待补غ待补 main-animation/mov/待补ѿͻ待补˲待补
+    // 待补չ待补src/shared/constants.ts 待补 ANIMATION_EXT / 待补 lib/client.js待补Ϊ .mov待补
+    // ע待补⣺font / pic 待补Ǳ待补ƽ待补 /<scope>/<file>待补ֻ待补 thumb 待补 /<scope>/<petId>/<file>待补
+    // 待补Ȳ待补 scope待补ٰ待补 scope 待补Բ待补ʣ待补Σ待补 font/pic 待补 petId 待补̵待补ļ待补Ρ待补
+    const [scope, ...restParts] = rest.split('/');
+    if (scope === 'font') {
+      const fontRoot = join(PACKAGE_ROOT, 'assets', 'fonts');
+      const fontFile = resolveExisting(fontRoot, restParts.join('/'));
+      if (fontFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: font not found' };
+      const ext = fontFile.slice(fontFile.lastIndexOf('.')).toLowerCase();
+      return { kind: 'file', file: fontFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+    }
+
+    // ֪ͨͼ待补꣺/dsh-whale-girl/pic/<file> 待补 待补 assets/pic待补 png待补ϵͳ֪ͨ icon 待补ã待补
+    // 待补/dsh-whale-girl/pic/memes/<待补زĸ待补>/<待补>.png 待补 待补زĸ待补 memeDirsFor 待补Ŀ¼待补
+    // 待补ռĿ¼ 待补 待补û待补Ŀ¼ 待补 待补ڣ待补 /thumb ͬһ待补زĹ待补壻待补ƺ待补ģ待补URL 待补Ϸ待补롣
+    // 待补ɵ待补ʽ /pic/memes/<待补>.png 待补ȼ待补زĸ待补 main 待补Ŀ¼待补δ待补Ŀͻ待补ճ待补ȡ待补ͼ待补
+    if (scope === 'pic') {
+      if (restParts[0] === 'memes') {
+        const segs = restParts.slice(1);
+        // 待补 待补 2 = <待补زĸ待补>/<待补ơ待补>待补ǡ待补 1 待补 = 待补ɱ待补ƽ待补ʽ待补Ƽ待补ļ待补Ŀ¼待补
+        // 待补ʽ待补壻待补زĸ待补 /thumb 待补 petId ͬ待补أ待补ָ待补 / 待补ַ待补ʽ 400待补
+        const scoped = segs.length >= 2;
+        const assetRoot = scoped ? segs[0] : 'main';
+        if (scoped && (assetRoot.length > 64 || ID_FORBIDDEN.test(assetRoot))) {
+          return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid asset root' };
+        }
+        const rel = (scoped ? segs.slice(1) : segs).join('/');
+        let picFile: string | undefined;
+        for (const dir of memeDirsFor(assetRoot)) {
+          picFile = resolveExisting(dir, rel);
+          if (picFile !== undefined) break;
+        }
+        if (picFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: pic not found' };
+        const ext = picFile.slice(picFile.lastIndexOf('.')).toLowerCase();
+        return { kind: 'file', file: picFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+      }
+      const picRoot = join(PACKAGE_ROOT, 'assets', 'pic');
+      const picFile = resolveExisting(picRoot, restParts.join('/'));
+      if (picFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: pic not found' };
+      const ext = picFile.slice(picFile.lastIndexOf('.')).toLowerCase();
+      return { kind: 'file', file: picFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+    }
+
+    if (scope !== 'thumb') {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: expected /dsh-whale-girl/thumb/<petId>/<file>' };
+    }
+    // thumb 待补ʽ待补/<scope>/<petId>/<file>待补ٲ待补 id 待补ļ待补
+    const [petId, ...nameParts] = restParts;
+    if (!petId || nameParts.length === 0) {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: expected /dsh-whale-girl/thumb/<petId>/<file>' };
+    }
+    // petId 待补**待补ʶ待补**待补= pet/<待补>-animation/ 待补 <待补>待补Դ待补 pet/ 待补µ待补ļ待补ǰ׺待补·待补Ƭ待补Σ待补
+    // 待补ָ待补/待补ַ待补ʽ 400待补κ待补·待补ƴ待补ж待补Ϸ待补ģ待补ճ待补
+    // 待补÷Ƿ待补ַ待补 ASCII 待补Ƿ待补벻待补پ待补Ĭ待补䵽待补زĳأ待补"û待补ж待补ز待补"待补֣待补
+    // Ҳ待补 resolveAsset ֮待补һ待补ṹ待补Է待补ߡ待补
+    if (ID_FORBIDDEN.test(petId)) {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid pet id' };
+    }
+    const fileName = nameParts.join('/');
+    const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.webm' && ext !== '.mov') {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: unsupported animation format (expected .webm or .mov)' };
+    }
+    // 待补زĹ待补Ƿ待补ڸó待补Ķ待补ز待补Ŀ¼待补ж待补Ĭ待补ã待补
+    //   - 待补 `pet/<petId>-animation/`待补pet pack 待补URL 待补 = 待补زĸ待补 assetRoot待补
+    //     ֻ待补Լ待补Ŀ¼待补鲻待补 404 待补ʽ待补ز待补
+    //   - 待补ڣ待补**待补ó待补**待补main 待补û待补ӵ待补ֻ待补ȫ待补ֶ待补أ待补
+    //     待补ز待补û待补 main-animation/<ext 待补Ŀ¼> 待补ȣ待补ΰ待补 assets/<ext 待补Ŀ¼>
+    // extraAnimDir 待补ȹ待补 resolveAsset待补petId 待补ǽ待补 URL 待补Σ待补Windows 待补 %5C 待补
+    // 待补б待补ܲ待补ᱻ rest.split('/') 待补п待补ֱ待补 join 待补 `..\..\x` 待补ӳ待补û待补̡待补
+    const extraAnimDir = resolveAsset(petConfigDir, petId + '-animation');
+    const file =
+      extraAnimDir !== undefined && existsSync(extraAnimDir)
+        ? resolveExisting(extraAnimDir, fileName)
+        : (resolveExisting(userRootFor(ext), fileName) ?? resolveExisting(assetRootFor(ext), fileName));
+    if (file === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: asset not found' };
+    return { kind: 'file', file, contentType: MIME[ext] ?? 'application/octet-stream' };
+
+    // 没匹配到任何路由：明确 404，而不是让函数没有返回值
+    return { kind: 'json', status: 404, obj: { error: 'unknown route' } };
+  };
+
+  ctx.effect(
+    () =>
+      ctx.webServer.register({
+        kind: 'prefix',
+        path: ROUTE_PREFIX,
+        handler: async (req: IncomingMessage, res: ServerResponse) => {
+          try {
+            const body = req.method === 'PUT' || req.method === 'POST' ? await readBody(req) : undefined;
+            const result = await handlePetRoute(req.url ?? '/', req.method ?? 'GET', body);
+            if (result.kind === 'json') sendJson(res, result.status, result.obj, result.headers);
+            else if (result.kind === 'text') sendText(res, result.status, result.body);
+            else if (result.kind === 'buffer') sendBuffer(res, result.status, result.body, result.contentType);
+            else sendFile(res, result.file, result.contentType); // 待补 async待补 open 待补Լ待补 pipe待补ڲ待补տ待补
+          } catch (e) {
+            sendJson(res, 500, { error: e instanceof Error ? e.message : String(e) });
+          }
+        },
+      }),
+    'dsh-whale-girl: /dsh-whale-girl asset route',
+  );
+
+  // 待补 worker 待补ڣ待补ж待补/HMR 待补ʱɱ待补פ待补 Python 待补̣待补
+  // 待补ÿ待补ض待补һ待补¶待补̣待补ռ待补Źܵ待补˳待补
+  ctx.effect(() => () => disposeVoiceWorkers(), 'dsh-whale-girl: voice workers');
+
+  // 待补ʶ待补ʱ待补ж待补ʱ待补غ待补ʱ待补
+  // 待补ʱ待补 = ÿ待补ֽ待补˵待补黰待补Ҷ待补ỨǮ待补
+  ctx.effect(() => {
+    armSightTimer();
+    return () => {
+      if (sightTimer !== null) {
+        clearTimeout(sightTimer);
+        sightTimer = null;
+      }
+    };
+  }, 'dsh-whale-girl: sight timer');
+
+  // 待补򣺰待补ͣ待补ж待补ʱ**待补**ͣ待补Ǹ待补פ待补ѯ待补̣待补
+  // 待补ÿ待补һ待补ξͶ待补һ待补 PowerShell 待补ں待补̨待补ת待补һֱ待补ڶ待补״̬待补
+  ctx.effect(() => {
+    void rearmAutoplay(readAutoplayConfig());
+    return () => {
+      stopEstopWatcher?.();
+      stopEstopWatcher = undefined;
+      // ж待补ʱ待补Ϊ待补ֹͣ待补ֹ待补ڼ待补һ待补ж待补״̬
+      autoplayEstop.stop('manual');
+    };
+  }, 'dsh-whale-girl: autoplay estop');
+
+  // 待补״̬待补 DSH 待补Ự待补¼待补 待补 待补ۺ待补"待补ǰ待补״̬"待补WorkStatusStore 待补 չʾ待补գ待补
+  // 待补ѵ待补¼待补turn/start待补user/message待补goal 待补ж待补tool/call待补update_goal 待补β待补ж待补
+  // tool/result待补approval/asked待补turn/end待补todo/write待补ֻ待补İ待补е待补λ待补
+  // 待补ģ待补ͣ待补г待补 workStatusEnabled ʱ待补ű待补ѣ待补host 待补
+  ctx.effect(() => {
+    const dispose = ctx.on('session/event', (session: unknown, event: unknown) => {
+      const type = (event as { type?: string } | null)?.type;
+      if (!type) return;
+      const sessionId = String(
+        (session as { id?: unknown; header?: { id?: unknown } } | null)?.header?.id ??
+          (session as { id?: unknown } | null)?.id ??
+          'unknown',
+      );
+      if (type === 'todo/write') {
+        // 待补İ待补ֻд**待补ûỰ**待补Ŀ待补state/task ͬԴ待补ȫ待补ֶΣ待补Ҳ待补Ͳ待补ܴ待补Ự待补
+        // 待补Ựû待补л待补Ŀ待补ѿ待补/待补 待补ᱻչʾ待补д待补ȥֻ待补Ϊһ待补"待补İ待补"待补
+        // 待补嵥待补 in_progress/pending ʱ currentTaskFromTodo 待补 null待补ڰѾ待补İ待补
+        // 待补ݻ待补䵽待补λ待补İ待补issue #59 ȱ待补 3待补λ待补İ待补ñ待补һ待补ʷ待补¼待补Σ待补
+        if (workStatus.has(sessionId)) {
+          workStatus.setTask(
+            sessionId,
+            currentTaskFromTodo(event as { data?: { todos?: Array<{ status?: string; content?: string }> } }),
+          );
+          publishWorkStatus(); // 待补İ待补仯ҲҪд S待补ݿ待补£待补
+        }
+        return;
+      }
+      if (type === 'user/message') {
+        // Ŀ待补ж待补Զ待补ֵ待补Ϣ待补 source.kind==='goal'待补round>0待补Զ待补ܣ待补
+        // 待补 turn/end completed ֻ待补"待补"待补
+        const source = (event as { data?: { source?: { kind?: string } } })?.data?.source;
+        if (source?.kind === 'goal') {
+          const flags = turnFlags.get(sessionId) ?? { goalRound: false, closing: null };
+          flags.goalRound = true;
+          turnFlags.set(sessionId, flags);
+        }
+        return; // user/message 待补λ待补
+      }
+      if (type === 'turn/start') {
+        turnFlags.set(sessionId, { goalRound: false, closing: null }); // 待补һ待补֣待补 turn 待补־
+        // 待补һ待补Ҳ待补ʼ待补µ待补ģ待补һ待补µ待补İ待补issue #59待补һֱ待补š待补
+        // 待补ۣ待补goal 待补ÿ待补ֿ待补ͷ待补һ˲待补λ待补İ待补ֱ待补֣待补ͨ待补ڿ待补ͷ待补ڣ待补
+        // 待补дһ待补 todo 待补嵥待补
+        workStatus.setTask(sessionId, null);
+        publishWorkStatus(); // 待补һ待补İ待补ҲҪд S
+      }
+      if (
+        type === 'tool/call' &&
+        String((event as { data?: { name?: unknown } })?.data?.name ?? '') === GOAL_UPDATE_TOOL
+      ) {
+        // update_goal complete/blocked = 待补Ǹ待补Ŀ待补β待补֣待补 completed 待补
+        const action = goalUpdateAction(String((event as { data?: { arguments?: unknown } })?.data?.arguments ?? ''));
+        if (action) {
+          const flags = turnFlags.get(sessionId) ?? { goalRound: false, closing: null };
+          flags.closing = action;
+          turnFlags.set(sessionId, flags);
+        }
+      }
+      const next = reduceWorkStatus(
+        event as { type?: string; data?: Record<string, unknown> & { reason?: { kind?: string } } },
+        turnFlags.get(sessionId),
+      );
+      if (!next) {
+        // turn/end 待补 null待补aborted / δ֪ kind待补ûỰ待补غ待补ѽ待补Ự״̬待补չʾ待补ص待补л待补
+        // 待补䵽待补Ծ待补Ự待补ֹ待补غϱ待补Ϻ待补ÿ待补һ待补¼待补 null 待补"待补"待补ԡ待补
+        if (type === 'turn/end') {
+          turnFlags.delete(sessionId);
+          cancelTerminalCleanup(sessionId); // 待补Ŀ待补Ҫ待补ˣ待补һ待补¿待补Ķ待补ʱ待补
+          workStatus.clear(sessionId); // 待补Ŀ待补ͬ待补İ待补һ待补ʧ待补clear 待补ڲ待补չʾ待补
+          publishWorkStatus(); // 待补غϱ待补 待补 待补ص待补У待补ǰ待补˾ݴ待补פ待补
+        }
+        return;
+      }
+      const seq = Number((event as { seq?: unknown }).seq ?? 0);
+      // ͬ待补Ựͬ״̬待补ظ待补£待补ˢ待补ͬ״̬待补Ÿ待补д待补չʾ
+      if (!workStatus.setState(sessionId, next, seq)) return;
+      publishWorkStatus(); // 待补λ待补 待补 д S待补ǰ待补˾ݴ待补ж待补 + 待补ݣ待补
+      // 待补ֻ̬չʾ待补ݴ待补ں待补Զ待补¾待补̬待补ٸ待补Bug 3 待补һ待补˳待补 Bug 2 待补
+      // 待补ص待补̬待补ȡ待补Ǵδ待补ִ待补е待补ʱ待补Ự待补ѷ待补̬待补Ȳ待补Ҳ待补ţ待补
+      // 待补Ŀ待补ͬ待补İ待补ˡ待补
+      if (next === 'success' || next === 'error') scheduleTerminalCleanup(sessionId);
+      else cancelTerminalCleanup(sessionId);
+    });
+    return () => {
+      dispose();
+      for (const t of terminalTimers.values()) clearTimeout(t);
+      terminalTimers.clear();
+    };
+  }, 'dsh-whale-girl: work-status session events');
+
+  // ϵͳ֪ͨ待补 DSH 待补¼待补 待补 待补֪ͨ֡待补ӣ待补ѯ /state 待补 toast待补
+  // 待补 work-status ͬһ session/event Դ待补ְ待补Զ待补֪ͨ֡ = 待补¼待补 待补 toast 待补һ待补һӳ待补䣬
+  // 待补״̬待补ۺϣ待补֡待补Լ待补 shared/notify.ts 待补ȫһ待补£待补ӳ待补Ķ待补
+  //   待补¼待补Դ待补turn/end待补/ʧ待补/待补ضϣ待补approval/asked待补Ȩ待补룩待补
+  //          tool/call待补ask_user_question待补û待补ѡ待补񣩡待补agent/error待补޻غ待补λ待补ʧ待补ܣ待补0.1.5 待补
+  //   待补ţ待补Ự待补 #82待补shouldNotifySession待补Ӵ待补/ί待补ɲ待补+ 待补待补 #114待补ֻ待补Ի待补ɡ待补
+  //          待补ӳ待补ȷ待补Ựȷʵû待补ٵ待补Ϸ待补 scheduleCompletionNotify待补
+  // 待补ģ待补ͣ待补֪ͨ待补ҳ待补ģʽ待补ѱ待补У待补Ӱ待补κγ待补Ϊ待补
+  ctx.effect(() => {
+    const sessionDispose = ctx.on(
+      'session/event',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (session: any, event: any) => {
+        // 待补Ự待补ţ待补issue #82待补Ӵ待补 / ί待补ɻỰ待补֪ͨ待补ȵ待补Ǹ待补Ի待补ĳһ·待补Ӵ待补ꡣ
+        // 待补о待补 header.origin待补 parentSession待补ǻ待补ͨ fork 待补Ի待补һ待补
+        // 待补оݲ待补ʱ待补У待补֪ͨ待补ơ待补 notify-events.ts 待补 shouldNotifySession待补
+        if (!shouldNotifySession(session)) return;
+        // 待补待补ţ待补issue #114待补Ի待补ɡ待补ӳ待补ȷ待补Ựȷʵû待补ٵ待补ŶӻỰ待补 Lead 待补
+        // 待补һ待补ֽ待补 待补 待补Ŷ待补չ待补Ա待补ʱ待补Ի待补ɡ待补󱨡待补ʧ待补/待补ضϡ待补Ȩ待补롢
+        // 待补û待补ѡ待补񲻹待补ţ待补ֱ待补ӷ待补У待补ɼ待补 notify-events.ts 待补 isCompletionTurnEnd待补
+        if (isCompletionTurnEnd(event)) {
+          scheduleCompletionNotify(sessionIdOf(session), event);
+          return;
+        }
+        const frame = reduceNotifyFrame(event as Parameters<typeof reduceNotifyFrame>[0]);
+        if (frame) pushNotifyFrame(frame);
+      },
+    );
+    // agent/error待补agent-loop dispatch.emit待补޻غ待补λ待补õ待补ʧ待补ܣ待补0.1.5 待补
+    // 待补ɰ待补޴待补¼待补 = 待补һ待补֪ͨ待补turn/end error 待补֧待补Ѹ待补Ǵ󲿷待补ʧ待补ܳ待补
+    // **待补Ŷ待补ܲ待补**待补غ待补ֻ待补 { turn, step, error }待补Ự待补ʶ待补޴待补ж待补Դ待补
+    const errorDispose = ctx.on(
+      'agent/error',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload: any) => {
+        pushNotifyFrame(agentErrorFrame(payload?.error));
+      },
+    );
+    return () => {
+      // ж待补ʱ待补Ķ待补ʱ待补ж待补أ待补㻹ȥдһ待补 S
+      for (const t of notifyActivityTimers.values()) clearTimeout(t);
+      notifyActivityTimers.clear();
+      sessionDispose();
+      errorDispose();
+    };
+  }, 'dsh-whale-girl: notify frames');
+
+  // /whale-balance б待补待补һ待补ˢ待补£待补д S 待补 ǰ待补 1s 待补ѯ待补ݣ待补
+  // fire-and-forget待补ִ待补ⲿ API待补ѯ待补Ҫ待补룩待补̻أ待补һ待补ɴ待补 S 待补
+  // 待补ɹ待补λ待补 + 待补ݣ待补̲待补֧待补 / ȱƾ֤ / ץȡʧ待补˵待补ݣ待补Ĭ待补
+  //
+  // 待补һ待补ɴ待补 `whale-` ǰ׺待补commands 待补**ȫ待补ռ待补**待补ͬ待补ע待补ֱ待补
+  // `command "balance" is already registered` 待补 activation ʧ待补
+  // 待补 dsh-pet 待补õ待补 balance/pet/chat待补ʱ待补Ȼײ待补
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-balance',
+        description: '待补ֶ待补ʾ待补ݣ待补',
+        handler: () => {
+          void refreshBalance(true); // manual待补û待补õ待补
+          return { kind: 'success', text: '待补Ѵ待补ʾ' };
+        },
+      }),
+    'dsh-whale-girl: /whale-balance command',
+  );
+
+  // 待补ˢ待补£待补host 待补Ψһ待补ʱ待补ǰ待补˲待补κ待补ʱ待补
+  // 待补**ÿ待补¶待补** eventsRefreshSec.balance 待补 待补һ待补Ȼ待补ϡ待补
+  // û待补κ待补ĳ待补ʱ待补ѯ待补ã待补׻待补ⲿ API 待补á待补
+  ctx.effect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    function arm(sec: number): void {
+      if (disposed) return;
+      timer = setTimeout(() => void tick(), Math.max(1000, sec * 1000));
+    }
+    async function tick(): Promise<void> {
+      let sec: number;
+      try {
+        const cfg = readAllConfig(configPaths);
+        sec = balancePeriodSec(cfg);
+        // û待补κ待补ĳ待补 待补 待补飨ʡ待补ⲿ待补ã待补ø待补һ待补Ȼ待补
+        if (flattenPetList(cfg).some((p) => p.balanceEnabled === true)) await refreshBalance();
+      } catch {
+        // 待补״待补 = 待补װ待补𻵣待补readAllConfig ֻ待补**待补Ĭ待补**ȱʧ/待补ʱ待补ף待补û待补д待补ֻ待补澯待补ˣ待补
+        // 待补š待补ÿ 30 待补һ待补û待补壬待补һ待补ռһ待补פ待补ʱ待补޺ð待补װ待补 DSH 待补ɡ待补
+        return;
+      }
+      arm(sec);
+    }
+    void tick(); // 待补һ待补Σ待补ǰ待补ͻ待补"待补һ待补ٶ待补ʱ"һ待补£待补
+    return () => {
+      disposed = true;
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, 'dsh-whale-girl: balance poll');
+
+  // 待补ڣ待补host 待补ȣ待补ǰ待补˲待补κ待补ʱ待补
+  // һ待补 = 待补һ待补 + 待补"待补"待补ĳ待补һ待补䣻待补һ待补İ待补**待补**待补ţ待补ֻ待补һ待补
+  // 待补ֵ待补Ǹ待补ֵ待补"待补һ待补 + 待补ȶ待补 lastWhisperAt"待补ÿ待补һ待补ʱ待补
+  // 待补ɾ待补Ŀ待补ģ待补̶待补Ȼ待补ϣ待补ά待补һ待补Ѷ待补ʱ待补ڡ待补
+  ctx.effect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    function arm(sec: number): void {
+      if (disposed) return;
+      timer = setTimeout(() => void tick(), Math.max(1000, sec * 1000));
+    }
+    function tick(): void {
+      let next = 300;
+      try {
+        const cfg = readAllConfig(configPaths);
+        const now = Date.now();
+        let min = Infinity;
+        for (const pet of flattenPetList(cfg)) {
+          const petId = String(pet.id ?? '');
+          if (!petId || pet.whisperEnabled !== true) continue;
+          const sec = whisperPeriodSec(cfg, petId);
+          min = Math.min(min, sec);
+          if (now - (lastWhisperAt.get(petId) ?? 0) < sec * 1000) continue;
+          lastWhisperAt.set(petId, now);
+          // 待补 await待补Ҫ待补룬待补ѵ待补ס待补ÿֻ待补ɣ待补
+          void publishWhisper(petId).catch(() => {});
+        }
+        if (Number.isFinite(min)) next = min;
+      } catch {
+        // 待补״待补 = 待补װ待补𻵣待补ͬ待补ʱ待补ţ待补ռ待补פ待补
+        return;
+      }
+      arm(next);
+    }
+    void tick(); // 待补һ待补Σ待补ǰ待补ͻ待补һ待补£待补
+    return () => {
+      disposed = true;
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, 'dsh-whale-girl: whisper poll');
+
+  // /pet б待补ѡ待补񡸵待补ǰ待补衹待补/chat 待补Ի待补Ŀ待补꣩待补 commandUi װ待补ε待补ѡ待补
+  // 待补 /pet 待补س待补˵待补ѡʱ待补ѡ待补к待补ύ /pet <id> 待补ͬһ handler待补 id 待补
+  // 待补name 待补ظ待补Ψһ待补в待补ϣ待补г待补ѡ id待补
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-pet',
+        description: 'ѡ待补/whale-chat 待补Ի待补Ŀ待补ꣻ֧待补ѡ待补 id/待补֣待补',
+        input: { hint: '[待补 id 待补]待补ղ鿴待补ǰ待补' },
+        handler: ({ rawInput }: { rawInput: string }) => {
+          const arg = rawInput.trim();
+          let eff: Record<string, unknown>[];
+          try {
+            eff = effectivePetList();
+          } catch {
+            eff = [];
+          }
+          if (!arg) {
+            const cur = resolveActivePetId();
+            const found = eff.find((p) => String(p.id) === cur);
+            return {
+              kind: 'success',
+              text: '待补ǰ待补裺' + (found ? petDisplayName(found) : cur || '待补޿ɽ待补裩'),
+            };
+          }
+          const byId = eff.find((p) => String(p.id) === arg);
+          if (byId) {
+            activePetId = String(byId.id);
+            return { kind: 'success', text: '待补ѡ待补裺' + petDisplayName(byId) };
+          }
+          const byName = eff.filter((p) => petDisplayName(p) === arg);
+          if (byName.length === 1) {
+            activePetId = String(byName[0].id);
+            return { kind: 'success', text: '待补ѡ待补裺' + petDisplayName(byName[0]) };
+          }
+          if (byName.length > 1) {
+            return {
+              kind: 'error',
+              text:
+                '待补' +
+                arg +
+                '待补 ' +
+                byName.length +
+                ' ֻ待补裨id待补' +
+                byName.map((p) => String(p.id)).join('待补') +
+                '待补 id ָ待补',
+            };
+          }
+          return { kind: 'error', text: '待补Ҳ待补衸' + arg + '待补id 待补ֶ待补У待补/pet 待补س待补ɴ待补ѡ待补' };
+        },
+      }),
+    'dsh-whale-girl: /pet command',
+  );
+
+  // /chat б待补待补뵱ǰ待补Ի待补޲待补 = 待补һ待补䣨待补ֶ待补壺待补 whisperEnabled 待补ſأ待补
+  // 待补Ǹ待补ֶ待补ֻ待补Զ待补ڣ待补в待补 = 待补Ի待补 chatWithPet ͬһ待补·待补 + 待补 + д待补̣待补
+  // 待补֧待补 **fire-and-forget**待补ִ待补ģ待补ͣ待补Ҫ待补룩待补ı待补һ待补д待补 S 待补
+  // pets.<id>.say待补ǰ待补 1s 待补ѯ /state 待补ݡ待补 /balance 待补ͬһ待补壨待补ִ待补ݣ待补
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-chat',
+        description: '待补뾨待补Ի待补 = 待补һ待补䣻待补Ϣ = 待补Ի待补',
+        input: { hint: '[待补Ϣ]待补 = 待补' },
+        handler: ({ rawInput }: { rawInput: string }) => {
+          const petId = resolveActivePetId();
+          if (!petId) return { kind: 'error', text: 'û待补пɽ待补' };
+          const text = rawInput.trim();
+          if (!text) {
+            void publishWhisper(petId).catch((e: unknown) =>
+              console.warn('[dsh-whale-girl] 待补쳣待补' + (e instanceof Error ? e.message : String(e))),
+            );
+            return { kind: 'success', text: '待补һ待补' };
+          }
+          if (text.length > 2000) return { kind: 'error', text: '待补Ϣ待补 2000 待补֣待补' };
+          void chatWithPet(petId, text).then((r) => {
+            if (!r.ok) {
+              console.warn('[dsh-whale-girl] 待补Ի待补ʧ待补 reason=' + r.reason + (r.message ? ' ' + r.message : ''));
+            }
+          });
+          return { kind: 'success', text: '待补ѷ待补ͣ待补ϻ待补Ӧ' };
+        },
+      }),
+    'dsh-whale-girl: /chat command',
+  );
+
+  // ϵͳ֪ͨ待补Ϸ待补ע待补ᣨnotify frames effect待补host 待补 session/event +
+  // agent/error 待补֪ͨ֡待补ӣ待补ѯ /notify 待补ȡ待补 toast待补DSH 0.1.5 ɾ待补
+  // api.events.mux/host 待补¼待补֪ͨ待补һ待补 host ͨ待补Ϊһ待补£待补
+
+  // 待补 Helper 待补գ待补첽待补ɺ待补
+  ctx.effect(() => () => {
+    disposed = true;
+    stopHelper('dsh-host-stop');
+  });
+
+  // ·待补ɾ待补 Helper待补Electron ȱʧʱ待补澯待补Ӱ待补 DSH 待补 overlay待补
+  startHelper();
+}

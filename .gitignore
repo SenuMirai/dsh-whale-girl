@@ -1,0 +1,12 @@
+# 运行期产物（可以重新构建，不进版本库）
+node_modules/
+*.log
+*.bak
+*.bak-*
+.whale-*
+sight-snapshots/
+
+# 本地临时/缓存
+.cache/
+.tmp/
+*.tsbuildinfo

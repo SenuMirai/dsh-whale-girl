@@ -1,0 +1,3509 @@
+/**
+ * dsh-whale-girl ������ࣨhost half������ ��������"���"����
+ *
+ * ְ���ṩ `/dsh-whale-girl/` ǰ׺��**ҵ������**��handlePetRoute ��������·��������ܵ����ã���
+ * ȫ�����ã�����Ĭ�� + �û������� + �ļ������ ./config �� readAllConfig ͳһ��ȡ�ϲ���
+ * ���ļ�ֻ�������ķ���ֵ��������ȷ����У�飩�����ٽӴ��κ������ļ���
+ *
+ * �����������ͬһ�� handlePetRoute��
+ *   - HTTP ·�ɣ�ע���� DSH WebServer �ϣ������ overlay / ����ҳ / б�������ã�
+ *   - ���� Helper �ܵ���helper-process.ts �� bridgeHandler��DSH_WHALE_BRIDGE=1 ʱ��
+ *     dsh-whale-girl-bridge:// scheme + stdout JSON �� + ���ػص���**���� HTTP**����
+ *     DSH Desktop 2.0.3+ �����������բ�Ż�������ӽ��̵��� HTTP ����
+ * ������Ϊ�ϸ�һ�£�Ӳ��Լ�������/���湦��/�İ�/������ȫ���룩��
+ *
+ * ·�ɣ�
+ *   /dsh-whale-girl/config             �� �ϲ����**��Ʒ����**��{ main:{...}, test1:{...}, ... }��
+ *                                ÿ��Ŀ�ֶ��������������/����/����ҳ��Ψһ������ڣ�
+ *                                GET ��ȡ��Ʒ��PUT �����û��㣨�������ؽ� main-config.jsonc����
+ *                                POST ͬ���û��㣨������Ĭ�� config.jsonc **ԭ��**����д�룬
+ *                                ��ע����ȫ���߼��ֶΣ��ϲ�����롸û���û��㡹�ȼۣ�����
+ *                                ����д�ӿڵ�**��Ӧ�嶼�Ǳ����ĳ�Ʒ�ۺ�**������ҳ��ʱ��Ч
+ *                                ֱ����ƽ�����Ӧ���ͻ��˲����еڶ���"������Ŀ���ֶ�"��ʵ��
+ *   /dsh-whale-girl/reload              �� ����ˡ��������á����Ҽ��˵���POST������������ Helper��ȫ������
+ *                                ���ﴰ�ڰ����������ؽ����������ļ��󲻱ػ�����ҳ�㱣�棩���뱣����
+ *                                **ͬһ��**����·����syncDesktop������������/display/size �仯ͬ����Ч
+ *   /dsh-whale-girl/config/meta         �� �����ļ����ز�Ŀ¼·�� + ȫ���洢λ���嵥
+ *                                       ������ҳ���߼����á���ж����洢��չʾ�ã�
+ *   /dsh-whale-girl/models              �� ��ѡ�������� + ģ�͡��嵥������ҳ��AI ģ�͡�����������Դ��
+ *                                       �� DSH ģ��ѡ����ͬԴ��ȡ���� llm ����� listProviders/listModels��
+ *   /dsh-whale-girl/thumb/<�زĸ�>/<������>.webm|.mov  �� �زİ���������.mov Ϊ macOS ���ƣ���չ��ȡ����
+ *       �ͻ��˲��ų��� ANIMATION_EXT����·�ɹ̶�˫��չ�����ף���
+ *       �ļ����� = $DSH_HOME/dsh-whale-girl/pet/<�زĸ�>-animation/��ֻ���Լ��ģ��������䣩��
+ *       ������   = $DSH_HOME/dsh-whale-girl/main-animation/<webm|mov>���û�Ŀ¼�����ȣ��� ���� assets/<webm|mov>
+ *       <�زĸ�> ��**��ʶ��**��pet/ ���ļ���ǰ׺�������ָ��/�����ַ��� 400���� ID_FORBIDDEN��
+ *   /dsh-whale-girl/state               �� **��ѯͳһ״̬ S**��GET��ǰ�� 1s ��ѯ��Ψһ����Դ����
+ *                                       { sections: { balance, workStatus, notify }, pets: { <id>: { say } } }��
+ *                                       ÿ��Ҷ�� = { counter, data }��counter ����ǰ�˲���Ⱦ��
+ *                                       ֻ�������ڴ桢�㸱���ã����������ﴥ���ⲿ����/ģ�����ɣ���
+ *   /dsh-whale-girl/balance              �� ���ˢ�£�POST �����˵㣬д S�����ݴ� /state ����
+ *   /dsh-whale-girl/whisper              �� ��ĳֻ��������˵һ�䣨POST �����˵㣬д S �� pets.<id>.say��
+ *   /dsh-whale-girl/broadcast            �� ������Ͷι�����ⲿ�������ı�д�����ݣ�POST �����˵㣬д S ��
+ *                                       pets.<id>.say�������ɡ�ֻ���ˣ�������������������ɣ�
+ *   /dsh-whale-girl/anim                 �� �㲥�����������貥һ��ָ��������POST �����˵㣬д S ��
+ *                                       pets.<id>.anim��Ч�����Ҽ����������˵�һ�£�������������ã�
+ *   /dsh-whale-girl/chat                 �� �Ի�����䣨GET ������� / POST �Ի���д memory.json��
+ *                                       POST ֻ�� {ok}���ظ�ͬ��д S �� pets.<id>.say��
+ *   /dsh-whale-girl/font|pic             �� ���� / ֪ͨͼ���ز�
+ *
+ * ϵͳ֪ͨ�����ڳ�����Ϊ����������ľ�ʵ���ǣ��������� notify.ts �� connection �¼���
+ * ��api.events.mux/host������ DSH �¼����� DSH 0.1.5 ��ɾ�����¼��� API����֪ͨ��Ϊ
+ * host ����������¼���session/event + agent/error������֡д�� S �� sections.notify��
+ * �����ͳһ��ѯ /state �� toast��֡��Լ�� shared/notify.ts һ�£����ۣ����·� pushNotifyFrame����
+ *
+ * ����ģʽ��Electron ͸������û�ж��������ļ���������ʾ����ȫ���ɳ�����Ŀ�� display ����
+ * ��web=������� / desktop=������ / both=���� / none=������ʾ��ȱʧʱ�ϲ���������Ĭ��ֵ����
+ *
+ * ��ȫ�ԣ�resolveAsset ��"����Խ"У�飬��֤·�����ڶ�Ӧ��Ŀ¼�ڣ�
+ *         PUT ���澭 saveUserConfig �������ؽ���id �����ļ����Ƿ��ַ���
+ *
+ * TODO(����)��peer �������Ͱ������ݲ��ɽ�����ctx/req/res ���� any��
+ *             �����ɽ������滻Ϊ DSH �ٷ����͡�
+ */
+import { createReadStream, existsSync, fstatSync, readFileSync } from 'node:fs';
+import { appendFile, readdir, readFile, mkdir, unlink, writeFile } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { homedir } from 'node:os';
+import { join, normalize, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths';
+import { credentialRef } from '@deepseek-ai/dsh-credentials';
+import { queryBalance } from './balance/index';
+import type { AccountBalanceSnapshot } from './balance/types';
+import { generateWhisper } from './whisper';
+import { generateChat, type ChatMemoryMessage } from './chat';
+import { configuredModel } from './model-selection';
+import { limitPool, pickMeme, readMemePool } from './memes';
+import { decideBroadcast, normalizeBroadcastText } from './broadcast';
+import { decideAnim } from './anim';
+import { decodeAudioBase64, synthesize, transcribe, disposeVoiceWorkers, DEFAULT_VOICE, DEFAULT_RATE } from './voice';
+import { captureFrames, captureScreen, frameDiff, saveSnapshot, snapshotUsage, SIGHT_DIR } from './sight';
+import { frameCaption, framePlan, shouldLookAtScreen } from './voice-vision';
+import { intentReply, parseVoiceIntent } from './voice-intent';
+import { DEFAULT_APP_ALIASES, findWindow, focusWindow, listWindows, openApp, runCommand } from './computer';
+import { lookAtScreen, parseSightReply, type SightMode } from './vision-llm';
+import {
+  DEFAULT_AUTOPLAY_CONFIG,
+  normalizeAutoplayConfig,
+  parseActionPlan,
+  runAutoplayRound,
+  type AutoplayConfig,
+  type AutoplayRound,
+} from './autoplay';
+import { createEstop } from './estop';
+import { createSkill, matchSkill, pruneSkills, scoreSkill, type Skill } from './game-skill';
+import { compressSession, createGameSession, recordStep, recentContext, shouldCompress, GENRE_MEMORY_CAP, type GameSession } from './game-memory';
+import { normalizeProfile, profileBrief, profileIdFromTitle, type GameProfile } from './game-profile';
+import { searchGuide, shouldSearchGuide } from './game-guide';
+import { createTaskSession } from './dsh-session';
+import { DEFAULT_TASK_CONFIG, advanceTaskState, createTaskState, parseTaskDone, shouldGiveUp, taskPrompt } from './task-loop';
+import { routeTask, type SelfAction } from './task-router';
+import { describePending, isCancel, isConfirm, isExpired, planSend, type PendingMessage } from './messaging';
+import { foregroundWindowTitle, performInput } from './input';
+import {
+  DEFAULT_SIGHT_CONFIG,
+  nextSightDelayMs,
+  normalizeSightConfig,
+  runSightRound,
+  type SightConfig,
+  type SightRound,
+} from './sight-runner';
+import {
+  configVersion,
+  findPetInstance,
+  flattenPetList,
+  ID_FORBIDDEN,
+  migrateUserConfig,
+  PET_DISPLAY_SET,
+  readAllConfig,
+  readPetConfigEntry,
+  readUserConfig,
+  saveUserConfig,
+  sliceMemoryRounds,
+  syncUserConfigFromDefault,
+  userConfigUnparsable,
+  type ConfigPaths,
+} from './config';
+import {
+  GOAL_UPDATE_TOOL,
+  reduceWorkStatus,
+  currentTaskFromTodo,
+  goalUpdateAction,
+  WorkStatusStore,
+  type WorkStatusTurnContext,
+} from './work-status';
+import {
+  agentErrorFrame,
+  hasBlockingActivity,
+  isCompletionTurnEnd,
+  reduceNotifyFrame,
+  sessionIdOf,
+  shouldNotifySession,
+  type HostNotifyFrame,
+} from './notify-events';
+import { profileNameFrom, storageEntries } from './storage-paths';
+import { PollStateStore } from './state';
+import { timeContextOf } from './time-context';
+import {
+  HelperProcess,
+  defaultElectronExe,
+  electronLandingDir,
+  ensureElectronDownload,
+  hasGraphicalDisplay,
+  resolveElectronPath,
+} from './helper-process';
+
+/** ����� id���� cordis.patch.yml һ�£� */
+export const name = 'dsh-whale-girl';
+/** ��Ҫע��ķ���webServer��·�ɣ�+ agentDefaultModel����ǰ�����̣�+ credentials��ƾ֤��+ llm���Ի�ģ�͵��ã�+ commands��/balance б�����+ connection������ Helper������վ���õ��Ѽ�Ȩվ�� URL�� */
+export const inject = ['webServer', 'agentDefaultModel', 'credentials', 'llm', 'commands', 'connection'];
+
+/** ����Ŀ¼��������������λ�� lib/������һ���������� */
+const PACKAGE_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+
+/** ���� assets �� */
+const PACKAGE_ROOT_ASSETS = join(PACKAGE_ROOT, 'assets');
+
+/** ���ڱ����Ŀ¼��������ص����һ����assets/memes/<����>.png�� */
+const PACKAGE_MEMES_DIR = join(PACKAGE_ROOT_ASSETS, 'memes');
+
+/** ·��ǰ׺ */
+const ROUTE_PREFIX = '/dsh-whale-girl';
+
+/**
+ * �����ǲ��� **DSH ����Ӧ��**��Electron ��������
+ *
+ * �о�ֻ�� `process.versions.electron`������Ӧ���� `ELECTRON_RUN_AS_NODE=1` ���������� dsh.cmd����
+ * ���ֶ������ڣ��� `dsh web` / ����ģʽ���Ǵ� Node ���̣�ȡ���������ݴ˰ѡ�����վ���Զ����ɣ�
+ * �������� �� ��������Ӧ�ô��ڣ�helper �� `dsh://open`�������� �� �������վ�㡣
+ */
+const isDesktopHost = (): boolean => Boolean(process.versions.electron);
+
+/** ��ͬ��չ����Ӧ�� Content-Type ӳ�� */
+const MIME: Record<string, string> = {
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mp4': 'video/mp4',
+  '.png': 'image/png',
+  '.json': 'application/json; charset=utf-8',
+  '.jsonc': 'application/json; charset=utf-8',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+/**
+ * �淶����У������·����ȷ������ assets ��Ŀ¼�ڣ���·����Խ����
+ * @returns �淶����ľ����ļ�·�����Ƿ�����Խ��ʱ���� undefined
+ */
+function resolveAsset(root: string, rel: string): string | undefined {
+  if (rel.length === 0) return undefined;
+  const candidate = normalize(join(root, rel));
+  const rootWithSep = root.endsWith(sep) ? root : root + sep;
+  if (candidate !== root && !candidate.startsWith(rootWithSep)) return undefined;
+  return candidate;
+}
+
+/** �� root �½�����ȷ��ʵ����ڣ��Ƿ�����Խ���򲻴���ʱ���� undefined */
+function resolveExisting(root: string, rel: string): string | undefined {
+  const candidate = resolveAsset(root, rel);
+  return candidate && existsSync(candidate) ? candidate : undefined;
+}
+
+/**
+ * ��ʽ����һ���ļ����� Content-Type / ���� / ����ͷ����
+ *
+ * Content-Length ����ȡ��**���ڶ����Ǹ� fd**��open �¼��� fstat���������� stat ����������û���
+ * $DSH_HOME/dsh-whale-girl/main-animation/webm/ ���ƻ�ͬ�������ز�ʱ��stat ��������ʼ��֮���ļ��ᱻ�ض�/
+ * ��д��һ��ʵ���ֽ������������ĳ��ȣ������Ӧ��**��Զ��������Ҳ������**�����������Ϊ stalled��
+ * ��Ƶ loadeddata ������������ error���������� issue #62 �ֳ�"���ݶϹ�"��һ�ֳ���ͬһ�� fd ��
+ * fstat �õ��Ĵ�С�����������ֽ���Ȼһ�¡�
+ */
+function sendFile(res: ServerResponse, file: string, contentType: string): void {
+  const stream = createReadStream(file);
+  stream.once('open', (fd) => {
+    if (res.destroyed || res.writableEnded) {
+      stream.destroy(); // �ͻ����ڿ���ǰ�ͷ�����
+      return;
+    }
+    try {
+      res.writeHead(200, {
+        'content-type': contentType,
+        'content-length': fstatSync(fd).size,
+        'cache-control': 'public, max-age=3600',
+      });
+    } catch {
+      // ��������� fstat �ò�������������ͷ������ Node �� chunked ��β��������Ȼһ�£�ֻ��û������
+      res.writeHead(200, { 'content-type': contentType, 'cache-control': 'public, max-age=3600' });
+    }
+    stream.pipe(res);
+  });
+  // ��ʧ�ܣ��ļ���ɾ/Ȩ��/��ռ�ã���ֱ�Ӷ������ÿͻ������̿���ʧ�ܣ����������޵ȴ�
+  stream.on('error', () => res.destroy());
+  // �ͻ�����ǰ�Ͽ��������ж���ʱ��Ƶ�������� ͣ������������ļ�����
+  res.on('close', () => stream.destroy());
+}
+
+// ���õĶ�ȡ/У��/�ϲ�/����ȫ�������� ./config��readAllConfig / saveUserConfig��host �԰���ʵ�֣�
+// �� import src/shared ���� DSH ���ļ�����Լ���������ļ����ٱ����κ������߼���ֻ���ѳ�Ʒ����ֵ��
+
+/** �ó����Ƿ��������ģʽ��Electron ͸������ */
+const isDesktopVisible = (display: unknown): boolean => display === 'desktop' || display === 'both';
+
+/** ���� JSON ��Ӧ��headers ��ѡ���� no-cache ���������� */
+function sendJson(res: ServerResponse, status: number, obj: unknown, headers: Record<string, string> = {}): void {
+  const body = JSON.stringify(obj);
+  res.writeHead(status, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(body),
+    ...headers,
+  });
+  res.end(body);
+}
+
+/** ���ʹ��ı���Ӧ���ز� 404/400 ����ʽ�����İ��� */
+function sendText(res: ServerResponse, status: number, body: string): void {
+  res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8' });
+  res.end(body);
+}
+
+/**
+ * ���Ͷ�������Ӧ������ϳɵ� MP3����
+ *
+ * ֻ�� HTTP������ Helper �� bridge �ܵ��� JSON ��Э�飬�����˶�������Ƶ��
+ * ���洰��������� `/voice/tts` �� HTTP �˵㣨�뱾�� 127.0.0.1 ͬԴ�������� bridge��
+ */
+function sendBuffer(res: ServerResponse, status: number, body: Uint8Array, contentType: string): void {
+  const buf = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  res.writeHead(status, {
+    'content-type': contentType,
+    'content-length': buf.length,
+    // ͬһ���ı��ϳɽ���ɻ��棬��������һ���Եģ����ô���/�������̫��
+    'cache-control': 'no-store',
+  });
+  res.end(buf);
+}
+
+/** ����ҵ��·�ɵ�Ӧ��WebServer ע�������� Helper �ܵ����õ�ͬһ��Լ�����ѷ��������̣� */
+type RouteResult =
+  | { kind: 'json'; status: number; obj: unknown; headers?: Record<string, string> }
+  | { kind: 'text'; status: number; body: string }
+  | { kind: 'file'; file: string; contentType: string }
+  | { kind: 'buffer'; status: number; body: Uint8Array; contentType: string };
+
+/** �ռ������壨�ı��� */
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve2, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (c: Buffer) => chunks.push(c));
+    req.on('end', () => resolve2(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// ������pet pack��˵����У��/ɨ���������� ./config��readAllConfig �ڲ����ֶκϲ�����
+// ���ﲻ���� host �࿽�������ļ�������������һ����ͳһ�� readAllConfig �ĳ�Ʒ��ȡ��
+// ---------------------------------------------------------------------------
+
+/** ����������壺ע�� `/dsh-whale-girl` ǰ׺·�� + б�����/balance /pet /chat���� */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DSH ע��� ctx��webServer/locale �� service �޾�̬���ͣ�
+export function apply(ctx: any): void {
+  // �û����ݸ����������û��ز�ͳһ�����ڴˣ���չ���� <���id> ���Խ�Ŀ¼��
+  const dshHome = resolveDshHome();
+  const userRoot = join(dshHome, 'dsh-whale-girl');
+  // �û������ã��ɱ༭�㣩���ļ�����Ŀ¼�����ö�ȡ/�ϲ�ͳһ�� readAllConfig��./config����
+  // �������� **JSONC**��main-config.jsonc�����������Ĭ�� config.jsonc ͬ��ͬ��ʽ��
+  // ��ͬ����д��ȥ�ľ��Ǵ�ע�͵�ԭ�ģ���չ����ʵ��ӳ���ݣ��ɰ� main-config.json ֻ������ + ���Ǩ�ƣ�
+  const userConfigPath = join(userRoot, 'main-config.jsonc');
+  const legacyUserConfigPath = join(userRoot, 'main-config.json');
+  const petConfigDir = join(userRoot, 'pet');
+  // ����·������readAllConfig ��Ψһ���룺����Ĭ�� + �û������� + �ļ�����Ŀ¼��
+  const configPaths: ConfigPaths = {
+    defaultFile: join(PACKAGE_ROOT, 'assets', 'config.jsonc'),
+    userFile: userConfigPath,
+    legacyUserFile: legacyUserConfigPath,
+    petDir: petConfigDir,
+  };
+  // ���û�һ����Ǩ�ƣ�main-config.json �� main-config.jsonc��������������һ�ֲ�����
+  // ���ļ��Ѵ����򲻶����ļ�����ʧ�ܲ�Ӱ�����С�����ȡ��Ծ�·���л��䡣
+  migrateUserConfig(configPaths, (msg) => console.log('[dsh-whale-girl] ' + msg));
+  // �û�����Ŀ¼��thumb ����ʱ�����ڰ����زģ�webm �� main-animation/webm/��mov��macOS ���ƣ��� main-animation/mov/��
+  const thumbUserRoot = join(userRoot, 'main-animation');
+  // �û������Ŀ¼��������/�Ի���ͼ��ͼƬ�������ڰ��� assets/memes����ͼ���ظİ���
+  const memesUserRoot = join(userRoot, 'memes');
+
+  // ���� ����ʶ��������Ļ�����������������������������������������������������������������������������������������������
+  // ���õ����� sight.json�������������ý���Ǳ�У���ϸ��ֻ���ǣ�����壩��
+  // Ĭ��**��**����������������ͼ��
+  const sightConfigPath = join(userRoot, 'sight.json');
+  const sightSnapshotsRoot = join(userRoot, SIGHT_DIR);
+  const readSightConfig = (): SightConfig => {
+    try {
+      const raw = JSON.parse(readFileSync(sightConfigPath, 'utf8')) as Partial<SightConfig>;
+      return normalizeSightConfig(raw);
+    } catch {
+      // �ļ������� / ���ǺϷ� JSON����Ĭ�ϣ��أ�
+      return { ...DEFAULT_SIGHT_CONFIG };
+    }
+  };
+  /** ���ִε�ʶ��״̬����һ֡����֡�����һ�仰��ȥ�أ� */
+  const sightState: { lastJpeg?: Uint8Array; lastReply: string } = { lastReply: '' };
+
+  // ���� ���򣨿���Ļ �� ��һ�� �� ���֣�������������������������������������������������������������������������
+  // ���õ����� autoplay.json�������/����/ʶ�������
+  // **Ĭ�Ϲر� + ����**������Ҫ��ʽ�򿪡�������ʽ�ص���ܣ��Ż���İ�����
+  const autoplayConfigPath = join(userRoot, 'autoplay.json');
+  const readAutoplayConfig = (): AutoplayConfig => {
+    try {
+      return normalizeAutoplayConfig(JSON.parse(readFileSync(autoplayConfigPath, 'utf8')) as Partial<AutoplayConfig>);
+    } catch {
+      return { ...DEFAULT_AUTOPLAY_CONFIG };
+    }
+  };
+
+  /**
+   * �����õļ�ͣ��������
+   *
+   * �������ڸ��Ų�������ñ��ʱ�ؽ��������ȼ���Ҫ����������
+   * ж��ʱͣ��������̣����������һ���¶� PowerShell һֱ��ѯ����
+   */
+  let autoplayEstop = createEstop(readAutoplayConfig().estopKey);
+  let stopEstopWatcher: (() => void) | undefined;
+
+  /** �ؽ���ͣ����������������ñ������ã� */
+  const rearmAutoplay = async (config: AutoplayConfig): Promise<void> => {
+    stopEstopWatcher?.();
+    stopEstopWatcher = undefined;
+    autoplayEstop = createEstop(config.estopKey, (reason) => {
+      console.warn(`[dsh-whale-girl] ����ͣ��${reason}`);
+    });
+    // ֻ�ڡ��������ʱ����������������ŵ�ʱ��û��Ҫ��פһ����ѯ����
+    if (config.enabled) {
+      stopEstopWatcher = autoplayEstop.startWatching();
+    }
+  };
+
+  /**
+   * ��һ�ִ���
+   *
+   * ���и����ö�����һ��ע�룬�����պ󵥲⣻�����߼������� autoplay.ts������������
+   */
+  /**
+   * ������ʶͼ�����ĸ�ģ�͡���
+   *
+   * ˳�򣺵���ָ�� �� **�ó������õ� chatModel** �� �Ựʵ��ģ�͡�
+   *
+   * Ϊʲô�м��ǻ�������������ã��������ڡ�AI �������ҳ��ѡ�Ի�ģ�͵ģ�
+   * �Ǹ�ֵ���� `main-config.jsonc` �� `chatModel`��**���� sight.json ��**��
+   * ������������� sight.json���������û�� chatModel��������һ·�䵽���Ựʵ��ģ�͡���
+   * ���־��ǡ�����������ģ�ͣ�����Ļ����ʾ�ɵġ���
+   */
+  const resolveVisionModel = (
+    override?: { provider: string; model: string },
+  ): { provider: string; model: string } | undefined => {
+    if (override !== undefined) return override;
+    try {
+      const cfg = readAllConfig(configPaths);
+      const petId = resolveActivePetId();
+      const found = findPetInstance(cfg, petId);
+      const conf = found ? found.conf : (cfg.main ?? {});
+      const configured = configuredModel(conf, 'chatModel');
+      if (configured !== undefined) return configured;
+    } catch {
+      /* ���ö������������»��� */
+    }
+    return resolveCurrentModel();
+  };
+
+  /**
+   * ��ȫȡ attachments ����
+   *
+   * ��**���ڱ������ inject �б�**�ֱ��д `ctx.attachments` �ᱻ cordis ��
+   * ��cannot get property "attachments" without inject����ʵ�� 500 �����������
+   * ����ȡ��û�оͷ��� undefined�����÷��������������á������
+   * ������������·�ɱ����
+   */
+  const getAttachments = (): {
+    saveImages: Parameters<typeof lookAtScreen>[0]['attachments']['saveImages'];
+  } | undefined => {
+    try {
+      return ctx.get('attachments', false) as ReturnType<typeof getAttachments>;
+    } catch {
+      return undefined;
+    }
+  };
+
+  /**
+   * �����õļ��ܿ� + ��һ֡/��һ��������
+   *
+   * ����ֻ�ڡ����漸��û�䡹ʱ���ã�����һ�䣬֮ǰ�Ǿ������Ͳ��ٶ�Ӧ���ڵ���Ļ��
+   * Ӳ�׼��ܻ������ڴ��󳡾��������
+   */
+  // ���� ��Ϸ���� + ���ֻỰ ��������������������������������������������������������������������������������������������
+  // ������ `games/<id>.json`��ÿ����Ϸһ�ݣ���λ��Ҫ�㡢���Ի��棩
+  const appsPath = join(userRoot, 'apps.json');
+  /** ���û��Զ�������������ñ�ϲ����û���Ŀ���ȣ� */
+  const readAppAliases = (): Record<string, string> => {
+    let user: Record<string, string> = {};
+    try {
+      const raw = JSON.parse(readFileSync(appsPath, 'utf8')) as unknown;
+      if (raw !== null && typeof raw === 'object') {
+        for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+          if (typeof v === 'string' && k.trim() !== '' && v.trim() !== '') user[k] = v;
+        }
+      }
+    } catch {
+      /* û�о������ñ� */
+    }
+    return { ...DEFAULT_APP_ALIASES, ...user };
+  };
+
+  const gamesRoot = join(userRoot, 'games');
+  /** ������Ϸ�Ự�����ʱ������࣬�˳�ʱѹ����һ��ժҪд�ع��ü��䣩 */
+  let autoplaySession: GameSession | undefined;
+  /** �����õ���Ϸ�������ܵ�ʱ������ƴ��ʾ�ʣ� */
+  let currentGame: GameProfile | undefined;
+  /** ��ȷ�ϵķ�������ȷ�Ϻ�Ű����� */
+  let pendingMessage: PendingMessage | undefined;
+  /** ������ס���֣�noop / ����ʧ�� / ���ܣ�������ֵ���Լ������鹥�� */
+  let autoplayStuck = 0;
+  /** �ϴ��Զ��鹥�Ե�ʱ�䣨��ȴ�ã� */
+  let autoplayLastSearchAt: number | undefined;
+
+  const readGames = async (): Promise<GameProfile[]> => {
+    try {
+      const names = (await readdir(gamesRoot)).filter((n) => n.endsWith('.json'));
+      const out: GameProfile[] = [];
+      for (const name of names) {
+        try {
+          const parsed = normalizeProfile(JSON.parse(readFileSync(join(gamesRoot, name), 'utf8')) as Partial<GameProfile>);
+          out.push(parsed);
+        } catch {
+          /* ���ݻ�����������Ӱ������ */
+        }
+      }
+      return out.sort((a, b) => a.title.localeCompare(b.title));
+    } catch {
+      return [];
+    }
+  };
+
+  const writeGame = async (profile: GameProfile): Promise<void> => {
+    await mkdir(gamesRoot, { recursive: true });
+    await writeFile(join(gamesRoot, profile.id + '.json'), JSON.stringify(profile, null, 2) + '\n', 'utf8');
+  };
+
+  /**
+   * �������֣��ѻỰѹ����һ��ժҪд��**���ü���**��Ȼ����ջ��塣
+   *
+   * ����Ҫ�󡸼��乲��һ�ݣ�ֻ�����ʱ�������Ŵ󡹡����������ﲻ�Ǵ浽��һ���ط���
+   * ����ѹ��һ�� assistant ע������ memory.json�����ڼ�������һ���ߡ�
+   */
+  const endAutoplaySession = async (): Promise<{ steps: number; summary: string } | undefined> => {
+    const session = autoplaySession;
+    if (session === undefined || !shouldCompress(session)) {
+      autoplaySession = undefined;
+      return undefined;
+    }
+    const petId = resolveActivePetId();
+    let target = 5;
+    try {
+      const cfg = readAllConfig(configPaths);
+      target = memoryRounds(petId, cfg);
+    } catch {
+      /* ���������þ���Ĭ������ */
+    }
+    const summary = compressSession(session, target);
+    try {
+      const mem = await readMemory();
+      const cfg = readAllConfig(configPaths);
+      const found = findPetInstance(cfg, petId);
+      const entryKey = found ? found.entry : 'main';
+      const bucket = (mem[entryKey] ??= {});
+      const record = (bucket[petId] ??= { messages: [] });
+      record.messages.push({ role: 'assistant', content: summary, ts: Date.now() });
+      const keep = Math.max(0, target) * 2;
+      if (keep > 0 && record.messages.length > keep) record.messages = record.messages.slice(-keep);
+      await writeMemory(mem);
+    } catch (e) {
+      console.warn('[dsh-whale-girl] ��������д����ʧ�ܣ�' + (e instanceof Error ? e.message : String(e)));
+    }
+    const steps = session.steps.length;
+    autoplaySession = undefined;
+    return { steps, summary };
+  };
+
+  const autoplaySkills: Skill[] = [];
+  let autoplayLastJpeg: Uint8Array | undefined;
+  let autoplayLastDesc = '';
+
+  const runAutoplayOnce = async (config: AutoplayConfig): Promise<AutoplayRound> => {
+    const visionModel = resolveVisionModel();
+    // ���ֻỰ����һ����ʱ����Ϸ���͸�����������ǡ�����Ϸʱ�����Ŵ󡹵���㣩
+    if (autoplaySession === undefined) {
+      const games = await readGames();
+      const game = games[0];
+      // ������Դ�������Զ��� > ����Ԥ�� > ����
+      const cap =
+        game?.memoryCap ??
+        (game === undefined ? GENRE_MEMORY_CAP.custom : (GENRE_MEMORY_CAP[game.genre] ?? GENRE_MEMORY_CAP.custom));
+      autoplaySession = createGameSession(game?.title ?? 'δָ����Ϸ', cap);
+      currentGame = game;
+    }
+    const round = await runAutoplayRound(
+      {
+        capture: async () => {
+          const shot = await captureScreen();
+          const b64 = shot.dataUrl.split(',')[1] ?? '';
+          const jpeg = Uint8Array.from(Buffer.from(b64, 'base64'));
+          autoplayLastJpeg = jpeg;
+          return { jpeg, width: shot.width, height: shot.height };
+        },
+        describe: async (jpeg: Uint8Array) => {
+          if (visionModel === undefined) return { ok: false as const, message: 'û�п��õ�ģ��' };
+          // watch ģʽ��ֻ�͹��������棬��˵��
+          const attachments = getAttachments();
+          if (attachments === undefined) {
+            return { ok: false as const, message: '�������񲻿��ã��޷���ͼƬ����ģ�ͣ�' };
+          }
+          const result = await lookAtScreen(
+            { llm: ctx.llm, attachments },
+            jpeg,
+            visionModel,
+            'watch',
+            '����������ʲô��������ָ���ʽֻ���һ�ж�����',
+            (refs) => {
+              void purgeAttachmentObjects(ctx, refs);
+            },
+          );
+          return result.ok ? { ok: true as const, text: result.text } : { ok: false as const, message: result.message };
+        },
+        perform: async (action) => {
+          const result = await performInput(action, {
+            allowedTitles: config.windowTitles,
+          });
+          return result.ok ? { ok: true as const } : { ok: false as const, message: result.message };
+        },
+        foregroundTitle: () => foregroundWindowTitle(),
+        log: (message: string) => console.log('[dsh-whale-girl] ' + message),
+        /** ���ܿ�·����ֻ�ڻ��漸��û�䣨<2%��ʱ���ã������������¿� */
+        trySkill: (jpeg: Uint8Array) => {
+          if (autoplayLastJpeg === undefined || autoplayLastDesc === '') return undefined;
+          const changed = frameDiff(autoplayLastJpeg, jpeg);
+          if (changed >= 0.02) return undefined;
+          const hit = matchSkill(autoplaySkills, autoplayLastDesc);
+          return hit === undefined ? undefined : { name: hit.name, actions: hit.actions };
+        },
+        /** ѧһ�� / ��ս�� */
+        learnSkill: (description: string, actions, ok: boolean) => {
+          autoplayLastDesc = description;
+          const existing = autoplaySkills.find((s) => s.name === description && s.actions.length === actions.length);
+          if (existing !== undefined) {
+            scoreSkill(existing, ok);
+            const kept = pruneSkills(autoplaySkills);
+            autoplaySkills.length = 0;
+            autoplaySkills.push(...kept);
+            return;
+          }
+          if (!ok) return; // û�ɹ����Ĳ����
+          const created = createSkill(description, actions, autoplaySkills);
+          if (created !== undefined) autoplaySkills.push(created);
+          const kept = pruneSkills(autoplaySkills);
+          autoplaySkills.length = 0;
+          autoplaySkills.push(...kept);
+        },
+      },
+      {
+        dryRun: config.dryRun,
+        allowedTitles: config.windowTitles,
+        // ��Ϸ��������ô�棩+ ���ս�����ղ�����ʲô������ģ�Ϳ���������֪���ð�ʲô
+        gameContext: [profileBrief(currentGame ?? normalizeProfile({ title: 'δָ����Ϸ' })), recentContext(autoplaySession ?? createGameSession('', 1), 12)]
+          .filter((x) => x !== '')
+          .join('\n'),
+      },
+      autoplayEstop,
+    );
+
+    // �ǵ����ֻỰ����������Ϸ���ͷŴ��˳�ʱѹ���ع��ü��䣩
+    if (autoplaySession !== undefined) {
+      if (round.kind === 'planned') {
+        recordStep(autoplaySession, {
+          at: Date.now(),
+          screen: round.thought,
+          plan: round.thought,
+          executed: round.executed,
+          outcome: round.executed ? 'ok' : 'rejected',
+        });
+      } else if (round.kind === 'stopped') {
+        recordStep(autoplaySession, {
+          at: Date.now(),
+          screen: '��ͣ',
+          plan: 'ֹͣ����',
+          executed: false,
+          outcome: 'stopped',
+        });
+      }
+    }
+    // ��ס���� + �����鹥��
+    if (round.kind === 'planned' && round.executed) {
+      autoplayStuck = 0; // ��ͨһ���͹���
+    } else if (
+      (round.kind === 'skipped' && (round.reason === 'model-noop' || round.reason === 'unparseable')) ||
+      (round.kind === 'failed' && round.reason === 'inject')
+    ) {
+      autoplayStuck++;
+    }
+
+    // ���ſ�ס �� �Լ�������һ�ι��ԣ�д����������һ�־ͻ������ʾ�ʣ�
+    if (
+      currentGame !== undefined &&
+      shouldSearchGuide({
+        stuckRounds: autoplayStuck,
+        hasGuide: currentGame.guide !== undefined,
+        ...(autoplayLastSearchAt === undefined ? {} : { lastSearchAt: autoplayLastSearchAt }),
+      })
+    ) {
+      autoplayStuck = 0;
+      autoplayLastSearchAt = Date.now();
+      console.log('[dsh-whale-girl] ������ס���Լ��鹥�ԣ�' + currentGame.title);
+      const web = ctx.get('web', false) as Parameters<typeof searchGuide>[0];
+      const found = await searchGuide(web, currentGame.title);
+      if (found.ok) {
+        currentGame = normalizeProfile({
+          ...currentGame,
+          guide: { query: found.query, summary: found.summary, sources: found.sources, atMs: found.atMs },
+        });
+        await writeGame(currentGame);
+      }
+    }
+
+    return round;
+  };
+
+  /**
+   * ��һ��ʶ��������Ļ �� �ж�ֵ��ֵ��˵ �� д�� `say` Ҷ�ӣ����� / ��ѡ�������
+   *
+   * ����**Ψһ**����س��ڣ��ֶ�������POST /sight/run���Ͷ�ʱ����������
+   * ��֤����·����Ϊ��ȫһ�£�������֡��ֶ���˵����ʱ��˵������Ư�ơ�
+   */
+  /**
+   * ɾ��ղ�Ϊ����ͼ����ʱд�µĸ������󣨡���ؼ��١�����
+   *
+   * ΪʲôҪ��ô����DSH ��ͼƬ��Ϣֻ�ܳ� `ImageAttachmentRef`���������洢
+   * **ֻ������ʵ��**��`writeFile` + `link` �� `objects/<sha256>`��ȫ��û���ڴ�ģʽ����
+   * ���˽��ܡ�����Լ 1 �롹����Ҫ��**�������ɾ**��
+   *
+   * ע�⣺·��������Ѱַ�ģ�`objects/<sha256 ǰ2λ>/<sha256>`����ɾ֮ǰ��ȷ��
+   * ��ȷʵ���������д���Ƿݣ�ɾ��ʧ��ֻ����־������Ӱ��Ի������
+   */
+  const purgeAttachmentObjects = async (
+    context: unknown,
+    refs: Array<{ attachmentId?: string }>,
+  ): Promise<void> => {
+    if (refs.length === 0) return;
+    try {
+      // ������Ŀ¼�� DSH ��������ٷ������Ƶ���$DSH_HOME/attachments/v1/objects/<xx>/<sha256>
+      const attachments = (context as { attachments?: { root?: string } }).attachments;
+      // ���������¶·������һ���� DSH_HOME ƴ���� observed-model.json ͬԴ��
+      const root = attachments?.root ?? join(dshHome, 'attachments', 'v1', 'objects');
+      for (const ref of refs) {
+        const id = typeof ref.attachmentId === 'string' ? ref.attachmentId : '';
+        if (id === '') continue;
+        // attachmentId ���� sha256������Ѱַ����ȡǰ��λ��Ͱ
+        const file = join(root, id.slice(0, 2), id);
+        try {
+          await unlink(file);
+        } catch {
+          /* �Ѿ������� / ����ĻỰ���� �� ������� */
+        }
+      }
+    } catch {
+      /* �����Ǿ�����Ϊ��ʧ�ܲ�����ʶ��������� */
+    }
+  };
+
+  /**
+   * ִ��һ������ָ�
+   *
+   * ����Ҫ�����Ļ������� undefined = �����ͼ��ǰ�����ã����������Ի����ף���
+   *
+   * ע�⣺����**���ƹ��κΰ�ȫբ**���������ߵ��Ǻ�����ҳͬһ������д�̣�
+   * ������Ȼ�ܼ�ͣ�봰�ڰ�����Լ��������ֻ��"��һֻ�ְ�ͬһ����ť"��
+   */
+  const runVoiceIntent = async (intent: ReturnType<typeof parseVoiceIntent>, petId: string): Promise<string | undefined> => {
+    if (intent === undefined) return undefined;
+    try {
+      switch (intent.kind) {
+        case 'stop-now': {
+          autoplayEstop.stop('manual');
+          return intentReply(intent);
+        }
+        case 'end-session': {
+          const ended = await endAutoplaySession();
+          if (ended === undefined) return '��ֻ�û��ʼ�ء�';
+          return ended.summary;
+        }
+        case 'toggle-sight': {
+          const current = readSightConfig();
+          const next = { ...current, enabled: intent.on ?? !current.enabled };
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          armSightTimer();
+          return intentReply({ ...intent, on: next.enabled });
+        }
+        case 'toggle-autoplay': {
+          const current = readAutoplayConfig();
+          const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: intent.on ?? !current.enabled });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          await rearmAutoplay(next);
+          if (!next.enabled) await endAutoplaySession();
+          return intentReply({ ...intent, on: next.enabled });
+        }
+        case 'look-now': {
+          const round = await runSightOnce();
+          if (round.kind === 'spoke') return round.text;
+          if (round.kind === 'skipped') return '��������ûʲô��˵�ġ�';
+          return 'û���ɣ��Ժ����ԡ�';
+        }
+        case 'status': {
+          const sightOn = readSightConfig().enabled;
+          const autoOn = readAutoplayConfig().enabled;
+          const steps = autoplaySession?.steps.length ?? 0;
+          return `ʶ��${sightOn ? '����' : '����'}������${autoOn ? '����' : '����'}�����ּ��� ${steps} ����`;
+        }
+        case 'open-app': {
+          // �� ctx.subprocess���� DSH �Լ�������ͬһ��ִ�����磩������·����
+          // Start-Process �ᰴ PATH / App Paths ע����Լ�������������ƴ·���ɿ���
+          void petId;
+          const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+          // �ȿ��ǲ����ѿ��ŵĴ��ڣ������������������'��Ⱥ��'ͨ�������л�ȥ��
+          const wins = await listWindows(sub);
+          const hit = findWindow(wins, intent.target);
+          if (hit !== undefined) {
+            // �ѿ��ž��й�ȥ��"��Ⱥ��"ͨ�������л��Ǹ����ڣ������ٿ�һ����
+            const focused = await focusWindow(sub, hit.pid);
+            return focused ? `�е���${hit.title}���ˡ�` : `��${hit.title}�����ţ���û�й�ȥ��ϵͳ�����ã���`;
+          }
+          const opened = await openApp(sub, intent.target, readAppAliases());
+          return opened.ok ? intentReply(intent) : `û��${intent.target}��${opened.message}`;
+        }
+        case 'search': {
+          const web = ctx.get('web', false) as Parameters<typeof searchGuide>[0];
+          const result = await searchGuide(web, intent.query, '');
+          if (!result.ok) return `û�鵽��${result.message}`;
+          return `�鵽һЩ����${result.summary.slice(0, 120)}��`;
+        }
+      }
+    } catch (e) {
+      console.warn('[dsh-whale-girl] ����ָ��ִ��ʧ�ܣ�' + (e instanceof Error ? e.message : String(e)));
+      return '��������ûִ�гɹ���';
+    }
+  };
+
+  /**
+   * ִ��һ�����Լ��������Ķ�����
+   *
+   * ����Ҫ�����Ļ���undefined = ���������ǰ�����ˣ����������Ի����ף���
+   * ����ʧ�ܶ���ʵ˵����"�õ���ȥ����"Ȼ��ʲô��û��������Ľ����
+   */
+  const runSelfAction = async (action: SelfAction): Promise<string | undefined> => {
+    const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+    switch (action.do) {
+      case 'open-app': {
+        const wins = await listWindows(sub);
+        const hit = findWindow(wins, action.target);
+        if (hit !== undefined) {
+          const focused = await focusWindow(sub, hit.pid);
+          return focused ? `�е���${hit.title}���ˡ�` : `��${hit.title}�����ţ���û�й�ȥ��`;
+        }
+        const opened = await openApp(sub, action.target, readAppAliases());
+        return opened.ok ? `�ã���${action.target}��` : `û��${action.target}��${opened.message}`;
+      }
+      case 'focus-window': {
+        const wins = await listWindows(sub);
+        const hit = findWindow(wins, action.target);
+        if (hit === undefined) return `û�ҵ���${action.target}��������ڡ�`;
+        const focused = await focusWindow(sub, hit.pid);
+        return focused ? `�е���${hit.title}���ˡ�` : `��${hit.title}��û�й�ȥ��`;
+      }
+      case 'open-url': {
+        const r = await runCommand(sub, ['powershell.exe', '-NoProfile', '-Command', `Start-Process '${action.url.replace(/'/g, "''")}'`], { timeoutMs: 20000 });
+        return r.ok ? `�ã��� ${action.url}��` : `�򲻿���ַ��${r.message}`;
+      }
+      case 'search-web': {
+        // ���� = ��ϵͳĬ����������������ҳ����"��һ����ҳ���ܽ�"��ö࣬Ҳ������ֱ����
+        const url = 'https://www.bing.com/search?q=' + encodeURIComponent(action.query);
+        const r = await runCommand(sub, ['powershell.exe', '-NoProfile', '-Command', `Start-Process '${url}'`], { timeoutMs: 20000 });
+        return r.ok ? `�ã������ѡ�${action.query}����` : `�Ѳ��ˣ�${r.message}`;
+      }
+      case 'play-music': {
+        // û��ͨ������ API����ʵ�������������Ʋ�����
+        const wins = await listWindows(sub);
+        const netease = findWindow(wins, '������') ?? findWindow(wins, 'cloudmusic');
+        if (netease !== undefined) {
+          const focused = await focusWindow(sub, netease.pid);
+          return focused ? `�����ƿ��ţ���ȥ�ѡ�${action.what}���ɡ�` : `������û�й�ȥ��`;
+        }
+        const opened = await openApp(sub, 'cloudmusic', readAppAliases());
+        if (!opened.ok) return `�򲻿������ƣ�${opened.message}`;
+        // ��֮��**�Լ�ȥ�Ҹ貥��**������ͨ������ѭ�������������ֶ��ѡ�
+        // �����"������Ϸģʽ���"����أ�ͬһ�׿���Ļ������������ѭ����
+        const run = await runTask(`�������������ﲥ�š�${action.what}��`, {
+          allowedTitles: ['����������', 'cloudmusic'],
+          maxSteps: 15,
+          dryRun: false,
+        });
+        return run.ok ? `�����ˣ�${run.summary}` : `���������ƣ���û���Զ����ţ�${run.summary}��`;
+      }
+      case 'send-message': {
+        // ���������Ȱ�Ҫ���Ķ����ڳ���������ȷ�ϣ�**�����̰���**��
+        // ����ϵ���ǲ�һ��ƥ����ˣ���Ϣ�������˾��ղ������ˡ�
+        pendingMessage = { app: action.app, to: action.to, text: action.text, at: Date.now() };
+        return describePending(pendingMessage);
+      }
+    }
+  };
+
+  /**
+   * ִ�С�ȷ�Ϲ��ˡ��ķ��ͣ�����������
+   *
+   * ÿһ��ʧ�ܾ�ͣ�֣��������°�������Ϊ���εİ������䵽����Ĵ����
+   * �ǱȲ������㡣����ֻ���߼����塪��SendKeys �򲻳����ġ�
+   */
+  const executePendingMessage = async (): Promise<string> => {
+    const pending = pendingMessage;
+    if (pending === undefined) return 'û�д�������Ϣ��';
+    if (isExpired(pending)) {
+      pendingMessage = undefined;
+      return '������Ϣ��̫���ˣ��Ѿ����ϡ�Ҫ���Ļ��ٸ���˵һ�Ρ�';
+    }
+    pendingMessage = undefined;
+
+    const sub = ctx.get('subprocess', false) as Parameters<typeof openApp>[0];
+    const wins = await listWindows(sub);
+    const win = findWindow(wins, pending.app);
+    if (win === undefined) {
+      const opened = await openApp(sub, pending.app, readAppAliases());
+      if (!opened.ok) return `�򲻿�${pending.app}��${opened.message}`;
+      await new Promise((r) => setTimeout(r, 2500)); // �����������
+    } else {
+      const focused = await focusWindow(sub, win.pid);
+      if (!focused) return `û����${pending.app}�е�ǰ̨������û����`;
+    }
+
+    for (const step of planSend(pending)) {
+      if (step.kind === 'clipboard') {
+        const r = await runCommand(sub, [
+          'powershell.exe', '-NoProfile', '-Command',
+          `Set-Clipboard -Value '${step.text.replace(/'/g, "''")}'`,
+        ], { timeoutMs: 15000 });
+        if (!r.ok) return `д������ʧ�ܣ�û����ȥ��${r.message}`;
+        await new Promise((r2) => setTimeout(r2, 120));
+        continue;
+      }
+      const input = await performInput(
+        { kind: 'key', key: step.key, ...(step.modifiers === undefined ? {} : { modifiers: step.modifiers }) } as never,
+        { allowedTitles: [] },
+      );
+      if (!input.ok) return `������${step.key}�����ܣ�û����ȥ��${input.message}`;
+      await new Promise((r2) => setTimeout(r2, 200));
+    }
+    return pending.text.trim() === ''
+      ? `���˺͡�${pending.to}���ĻỰ������û˵��ʲô������û����`
+      : `���ˣ���${pending.app}�ġ�${pending.to}��������${pending.text}��`;
+  };
+
+  /**
+   * ��һ��ͨ�����񣺿�����Ļһ�������ɡ�
+   *
+   * ���ǡ�Ӳ���붯������������������������֡�����������Ϣ������һ��·��
+   * ������Ϸ����ͬһ��"��ͼ��������ע�����֤"��ѭ����ֻ��Ŀ�겻ͬ��
+   *
+   * ÿ�������鼱ͣ��������ס�򳬲�����ͣ�֣���������Ǯ��
+   */
+  const runTask = async (
+    goal: string,
+    opts: { allowedTitles?: string[]; maxSteps?: number; dryRun?: boolean } = {},
+  ): Promise<{ ok: boolean; kind: 'done' | 'gaveup' | 'stopped' | 'failed'; summary: string; steps: number }> => {
+    const visionModel = resolveVisionModel();
+    if (visionModel === undefined) return { ok: false, kind: 'failed', summary: 'û�п��õ�ģ��', steps: 0 };
+    const attachments = getAttachments();
+    if (attachments === undefined) return { ok: false, kind: 'failed', summary: '�������񲻿���', steps: 0 };
+
+    const maxSteps = Math.max(1, Math.min(50, opts.maxSteps ?? DEFAULT_TASK_CONFIG.maxSteps));
+    const dryRun = opts.dryRun ?? DEFAULT_TASK_CONFIG.dryRun;
+    const state = createTaskState();
+    let lastJpeg: Uint8Array | undefined;
+
+    for (let step = 1; step <= maxSteps; step++) {
+      // ��ͣ���ȣ�ÿ�����飨����һ�������ͣ��
+      if (!autoplayEstop.canAct()) {
+        const snap = autoplayEstop.snapshot();
+        return { ok: false, kind: 'stopped', summary: `��ͣ��${snap.lastReason ?? '��ֹͣ'}`, steps: state.steps };
+      }
+
+      const shot = await captureScreen();
+      const jpeg = Uint8Array.from(Buffer.from(shot.dataUrl.split(',')[1] ?? '', 'base64'));
+      const changed = lastJpeg === undefined ? true : frameDiff(lastJpeg, jpeg) >= 0.01;
+      lastJpeg = jpeg;
+      // ��һ����ƿ��գ�����Ҫ�ܻؿ�����������ʲô����
+      // ����ֻ��ʶ����·�桢����ѭ�����桪����������ҳ�￴���������ڼ�Ļ��档
+      try {
+        await saveSnapshot(sightSnapshotsRoot, shot.dataUrl.split(',')[1] ?? '', readSightConfig().keepSnapshots);
+      } catch {
+        /* �治�²�Ӱ�������� */
+      }
+
+      const seen = await lookAtScreen(
+        { llm: ctx.llm, attachments },
+        jpeg,
+        visionModel,
+        'watch',
+        taskPrompt(goal, step, maxSteps),
+        (refs) => void purgeAttachmentObjects(ctx, refs),
+      );
+      if (!seen.ok) return { ok: false, kind: 'failed', summary: seen.message, steps: state.steps };
+
+      // ��ۣ�ģ�͵���˵��ʲô��û�����У�ʧ��ʱֻ�ܲ¡�
+      console.log('[dsh-whale-girl] ����� ' + step + ' ��ģ�������' + seen.text.slice(0, 200));
+
+      // �ȿ��ǲ��Ǳ�����ɣ��������У����ٽ����������׶������������ظ�ʵ�֣�
+      const finished = parseTaskDone(seen.text);
+      if (finished !== undefined) {
+        return { ok: true, kind: 'done', summary: finished, steps: state.steps };
+      }
+      const plan = parseActionPlan(seen.text, { width: shot.width, height: shot.height });
+      if (plan.kind === 'noop' || plan.kind === 'invalid') {
+        advanceTaskState(state, `������${plan.kind === 'noop' ? plan.reason : plan.reason}`, changed);
+        const giveUp = shouldGiveUp(state, maxSteps);
+        if (giveUp.giveUp) return { ok: false, kind: 'gaveup', summary: giveUp.reason, steps: state.steps };
+        continue;
+      }
+
+      // ִ����һ���Ķ���
+      let executed = true;
+      if (!dryRun) {
+        autoplayEstop.markInjecting(true);
+        try {
+          for (const action of plan.actions) {
+            const r = await performInput(action, { allowedTitles: opts.allowedTitles ?? [] });
+            if (!r.ok) {
+              executed = false;
+              return { ok: false, kind: 'failed', summary: `�������ܣ�${r.message}`, steps: state.steps };
+            }
+          }
+        } finally {
+          autoplayEstop.markInjecting(false);
+        }
+      }
+      advanceTaskState(state, `${executed ? '' : '[����]'}${plan.actions.length} ������`, changed);
+      const giveUp = shouldGiveUp(state, maxSteps);
+      if (giveUp.giveUp) return { ok: false, kind: 'gaveup', summary: giveUp.reason, steps: state.steps };
+    }
+    return { ok: false, kind: 'gaveup', summary: `���� ${state.steps} ����û���`, steps: state.steps };
+  };
+
+  const runSightOnce = async (): Promise<SightRound> => {
+    const conf = readSightConfig();
+    const round = await runSightRound(
+      conf,
+      {
+        capture: () => captureScreen(),
+        describe: async (jpeg: Uint8Array, mode) => {
+          // ʶͼ���ĸ�ģ�ͣ�sight.json ����ָ�� > �������õ� chatModel > �Ựʵ��ģ�͡�
+          // ��֮ǰ��������� sight.json ��� chatModel�����������û�У�������Զ�䵽�Ựģ�ͣ�
+          const visionModel = resolveVisionModel();
+          if (visionModel === undefined) {
+            return { ok: false as const, reason: 'no-model', message: 'û���������õ�ʶͼģ��' };
+          }
+          // attachments ���� inject �б��������ȡ��Ӳȡ���� 500��
+          const attachments = getAttachments();
+          if (attachments === undefined) {
+            return { ok: false as const, reason: 'attachments-missing', message: '�������񲻿���' };
+          }
+          const result = await lookAtScreen(
+            { llm: ctx.llm, attachments },
+            jpeg,
+            visionModel,
+            mode,
+            undefined,
+            // ��ؼ��٣�����һ��������ɾ����ʱ����
+            (refs) => {
+              void purgeAttachmentObjects(ctx, refs);
+            },
+          );
+          return result.ok ? { ok: true as const, text: result.text } : result;
+        },
+        persist: (jpegBase64: string, keep: number) => saveSnapshot(sightSnapshotsRoot, jpegBase64, keep),
+        diff: frameDiff,
+        parseReply: parseSightReply,
+      },
+      sightState,
+    );
+
+    if (round.kind === 'spoke') {
+      const petId = resolveActivePetId();
+      state.writePet(
+        petId,
+        'say',
+        // ʶ���Ĭ��ֻ�����ݣ�conf.speak �򿪺���������Ⱦ���������
+        round.speak ? { text: round.text, speak: true } : { text: round.text },
+      );
+      console.log(`[dsh-whale-girl] ����Ļ˵��${round.text}`);
+
+      // д��**ͬһ�ݼ���**��memory.json��������/����Ի����ã���
+      //
+      // Ϊʲô�������ʹ���ʶ��������桢��������ֵļ����ѵ��������𡹡���
+      // ����ʶ��ȷʵ�Ƕ����ģ�ÿ�ο�����������������ղſ�����Ӯ����һ���������ڸ��
+      // ����������Ļ˵�Ļ�Ҳ����ʷ���´ζԻ����ܽ��ϡ�
+      if (conf.memoryShared) {
+        try {
+          const cfgNow = readAllConfig(configPaths);
+          const mem = await readMemory();
+          const found = findPetInstance(cfgNow, petId);
+          const entryKey = found ? found.entry : 'main';
+          const bucket = (mem[entryKey] ??= {});
+          const record = (bucket[petId] ??= { messages: [] });
+          const now = Date.now();
+          // ��һ�� system ����ע�ǣ����ⱻģ�͵���"����˵�Ļ�"
+          record.messages.push({ role: 'assistant', content: `���ҿ�������Ļ��˵��${round.text}��`, ts: now });
+          // �ضϵ�������������ֹ���������� token
+          const rounds = memoryRounds(petId, cfgNow);
+          const keep = Math.max(0, rounds) * 2;
+          if (keep > 0 && record.messages.length > keep) {
+            record.messages = record.messages.slice(-keep);
+          }
+          await writeMemory(mem);
+        } catch (e) {
+          // ����дʧ�ܲ���Ӱ������Ѿ��ɹ��Ĵ
+          console.warn('[dsh-whale-girl] ʶ������д��ʧ�ܣ�' + (e instanceof Error ? e.message : String(e)));
+        }
+      }
+    } else if (round.kind === 'failed') {
+      console.warn(`[dsh-whale-girl] ʶ��ʧ�ܣ�${round.reason}����${round.message}`);
+    }
+    return round;
+  };
+
+  /**
+   * ����ʶ����ʱ����
+   *
+   * �� `setTimeout` ���������� `setInterval`��һ��ʶ��Ҫץ�� + ��ģ�ͣ��뼶����
+   * �̶����������ִ��϶ѻ�����������֤����һ������ſ�ʼ��ʱ��һ�֡���
+   *
+   * ���ñ����POST /sight/config�������̵������ţ����õ������
+   */
+  let sightTimer: ReturnType<typeof setTimeout> | null = null;
+  const armSightTimer = (): void => {
+    if (sightTimer !== null) {
+      clearTimeout(sightTimer);
+      sightTimer = null;
+    }
+    const conf = readSightConfig();
+    if (!conf.enabled) return; // ���ž�ʲô������
+    // ����������ǹ̶�Ƶ�ʣ�������Ҫ���ǡ�ż����һ�ۡ������ǻ�е��ÿ N ��
+    const delayMs = nextSightDelayMs(conf);
+    sightTimer = setTimeout(() => {
+      sightTimer = null;
+      void (async () => {
+        try {
+          await runSightOnce();
+        } catch (e) {
+          console.warn('[dsh-whale-girl] ʶ���쳣��' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+          armSightTimer(); // ��ʽ������һ��
+        }
+      })();
+    }, delayMs);
+  };
+
+  /**
+   * **�Ựʵ�����õ�ģ��**���۲�ֵ����
+   *
+   * Ϊʲô����ֻ�� `agentDefaultModel.currentSelection()`��DSH ���ĵ�д�ú��������
+   * ����owns the **default** model selection independently of any Host or transport����
+   * Ҳ����**�»Ự��Ĭ��ģ��**�������������ǰ�Ự����Ǹ������������¡�
+   * ʵ���ײ���ˣ�profile ��Ĭ��д���� `workbuddy-ai`�������˵�ǰ�Ự����
+   * `deepseek-account/deepseek-flash` �ϣ����ȴ��Ĭ��ֵȥ���ã�ֱ�ӳ��� 429��
+   *
+   * Ȩ����Դ�� `agent/request` �ٲ���ÿһ����������� provider/model ����������һ��
+   * ��DSH �Լ��ĻỰ��ģ��ѡ��Ҳ��������ٲ��︲�ǵģ��� dsh-agent ��
+   * `installModelSelection`��������ֻ**����**��`await next()` �õ������������������ԭ�����أ�
+   * ���������á�
+   *
+   * û�۲����������������û�ܹ��κζԻ���ʱ�˻�Ĭ��ֵ����������Ϊû���ݾͲ�������
+   */
+  let observedSessionModel: { provider: string; model: string } | undefined;
+
+  /**
+   * ��ѧ���ĻỰģ��**����**��
+   *
+   * Ϊʲô����棺�۲�ֵֻ���ڽ����ڴ��DSH һ�����û�ˡ�������������
+   * ��û�������κ�������Ƕ�ʱ�䣬`resolveCurrentModel()` ֻ���˻�
+   * `agentDefaultModel` ��Ĭ��ֵ���������Ǹ�Ĭ��ֵ���Ѿ������� workbuddy-ai��
+   * ���ǡ�������һ�ζԻ�/����ض�ʧ��һ�Ρ�������ʵ��ȵ�����
+   * ����������������ϴ�ѧ���ģ���������ھͲ������ˡ�
+   */
+  const observedModelPath = join(userRoot, 'observed-model.json');
+  try {
+    const cached = JSON.parse(readFileSync(observedModelPath, 'utf8')) as { provider?: unknown; model?: unknown };
+    if (typeof cached.provider === 'string' && cached.provider !== '' && typeof cached.model === 'string' && cached.model !== '') {
+      observedSessionModel = { provider: cached.provider, model: cached.model };
+    }
+  } catch {
+    /* �״�����û�л��棬���� */
+  }
+  const persistObservedModel = (value: { provider: string; model: string }): void => {
+    observedSessionModel = value;
+    void (async () => {
+      try {
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(observedModelPath, JSON.stringify(value, null, 2) + '\n', 'utf8');
+      } catch {
+        /* �治������Ӱ�챾�ζԻ� */
+      }
+    })();
+  };
+  ctx.effect(() => {
+    try {
+      return ctx.on('agent/request', async (_payload: unknown, next: () => Promise<unknown>) => {
+        const resolved = (await next()) as { provider?: unknown; model?: unknown } | undefined;
+        try {
+          const provider = resolved?.provider;
+          const model = resolved?.model;
+          if (typeof provider === 'string' && provider !== '' && typeof model === 'string' && model !== '') {
+            // ���˲�д�̣�ÿ������д��װ�������� IO
+            if (observedSessionModel?.provider !== provider || observedSessionModel.model !== model) {
+              persistObservedModel({ provider, model });
+            }
+          }
+        } catch {
+          /* ֻ������������Ҳ����Ӱ����һ������ */
+        }
+        return resolved;
+      });
+    } catch (e) {
+      // �¼�ע��ʧ��**���������������**���۲�ģ��ֻ�ǡ��öԻ���׼������ǿ��
+      // �˻����� agentDefaultModel ��Ĭ��ֵҲҪ���ܡ�
+      console.warn(
+        '[dsh-whale-girl] �޷����� agent/request�����˻�Ĭ��ģ�ͣ���' +
+          (e instanceof Error ? e.message : String(e)),
+      );
+      return () => {};
+    }
+  }, 'dsh-whale-girl: observe session model');
+
+  /**
+   * ��������ǰ�Ի������ĸ�ģ�͡������ȹ۲쵽�ĻỰģ�ͣ���� agentDefaultModel ��Ĭ��ֵ��
+   * �Ի��������������һ�����ڣ���֤�����ھ�һ�¡�
+   */
+  const resolveCurrentModel = (): { provider: string; model: string } | undefined => {
+    if (observedSessionModel !== undefined) return observedSessionModel;
+    try {
+      const sel = ctx.agentDefaultModel.currentSelection() as { provider?: string; model?: string } | undefined;
+      if (typeof sel?.provider === 'string' && sel.provider !== '' && typeof sel.model === 'string' && sel.model !== '') {
+        return { provider: sel.provider, model: sel.model };
+      }
+    } catch {
+      /* δ���� �� undefined */
+    }
+    return undefined;
+  };
+
+  /**
+   * �������ã�`$DSH_HOME/dsh-whale-girl/voice.json`����ѡ�������ھ���Ĭ�ϣ���
+   *
+   * Ϊʲô������ config.jsonc���Ƿ��������ϸ�����ֶ�У���롸�����滻�����壬
+   * ������������������Python ·������ɫ�������������޹أ����ȥ����
+   * �����÷Ƿ� �� ���ﲻ��ʾ����������ǣ�������
+   *
+   * �ֶ�ȫ����ѡ��
+   *   { "voice": "zh-CN-XiaoyiNeural", "rate": "+0%", "pythonPath": "C:\\...\\python.exe", "language": "zh" }
+   *
+   * ÿ�ζ����¶����ļ���С��������ˢ��ҳ�漴��Ч�����������
+   */
+  const readVoiceConfig = (): {
+    voice: string;
+    rate: string;
+    pythonPath?: string;
+    language?: string;
+    shortcut?: string;
+    micDeviceId?: string;    hideButton?: string;
+  } => {
+    const fallback = { voice: DEFAULT_VOICE, rate: DEFAULT_RATE } as {
+      voice: string;
+      rate: string;
+      pythonPath?: string;
+      language?: string;
+      shortcut?: string;
+      micDeviceId?: string;      hideButton?: string;
+    };
+    try {
+      const raw = readFileSync(join(userRoot, 'voice.json'), 'utf8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const voice = typeof parsed.voice === 'string' && parsed.voice.trim() !== '' ? parsed.voice.trim() : fallback.voice;
+      const rate = typeof parsed.rate === 'string' && parsed.rate.trim() !== '' ? parsed.rate.trim() : fallback.rate;
+      const pythonPath = typeof parsed.pythonPath === 'string' && parsed.pythonPath.trim() !== '' ? parsed.pythonPath.trim() : undefined;
+      const language = typeof parsed.language === 'string' && parsed.language.trim() !== '' ? parsed.language.trim() : undefined;
+      const shortcut = typeof parsed.shortcut === 'string' && parsed.shortcut.trim() !== '' ? parsed.shortcut.trim() : undefined;
+      const micDeviceId =
+        typeof parsed.micDeviceId === 'string' && parsed.micDeviceId.trim() !== '' ? parsed.micDeviceId.trim() : undefined;
+      const hideButton = typeof parsed.hideButton === 'string' && parsed.hideButton.trim() !== '' ? parsed.hideButton.trim() : undefined;
+      return { voice, rate, pythonPath, language, shortcut, micDeviceId, hideButton };
+    } catch {
+      // �ļ������� / ���ǺϷ� JSON����Ĭ����Ĭ��ֵ�������ǿ�ѡ�����������������ֻ��ò�������
+      return fallback;
+    }
+  };
+  /**
+   * �����Ŀ¼�� ���� �붯���زģ�/thumb��**ͬһ���زĹ�������**��
+   *   - `pet/<�زĸ�>-memes/` ���ڣ������Դ����������**ֻ����**������·�ɶ������䡪��
+   *     �鲻���� 404 / ����Ŀ�޳����� `pet/<�زĸ�>-animation/` �Ķ�ռ��������һ�£���
+   *   - �����û�Ŀ¼ `$DSH_HOME/dsh-whale-girl/memes/` ���ȣ���ΰ��� `assets/memes/`�����ļ��ϲ���
+   *     �롸main-animation/<ext> �� ���� assets/<ext>�������ز���ͬ������
+   * �أ�readMemePool����·�ɣ�/pic/memes��������**ͬһ������**��������ѡ�����֣�
+   * ·�ɱ���ȡ�õ�������������ͼ��ͼ�ѡ�
+   * �زĸ�һ���ȹ� resolveAsset�������� URL �Σ�Windows �� %5C ����ķ�б�ܲ��ᱻ
+   * rest.split('/') �п���ֱ�� join ���� `..\..\x` �ӳ��û������̣��� /thumb ͬһ�����ߣ���
+   */
+  const memeDirsFor = (assetRoot: string): string[] => {
+    const own = resolveAsset(petConfigDir, assetRoot + '-memes');
+    if (own !== undefined && existsSync(own)) return [own];
+    return [memesUserRoot, PACKAGE_MEMES_DIR];
+  };
+  // ��ѯͳһ״̬��S����ǰ�� 1s ��ѯ��**Ψһ**����Դ����� / ����״̬ / ֪ͨ / ����˵������
+  // ����д���� state.writeSection / writePet������ͳһ���� counter������ ./state ��˵����
+  const state = new PollStateStore();
+  // ����״̬�������գ�/work-status �˵���Ӧ������� 1s ��ѯ����state=��ǰ�״̬��null=���У���
+  // task=��ǰ�������顢ts=����仯ʱ�䣨��ѯ����仯�ã��������İ����ڴˣ������������
+  // events.workStatusTexts��host �������İ�����
+  // �ۺ���չʾѡ���� WorkStatusStore��host/work-status.ts�����߼��ɵ��⣩��**state �� task ����
+  // �Ự��**����task ����ȫ�ֵ�ֵ��д��һ�ξ͸��Ŵ˺����лỰ�һֱ��ʾ��issue #59����
+  // �������ڴ�̬������ؿ��У�ÿ�λỰ�¼���ʵ��״̬�仯�Ÿ��£�ǩ���ȶԷ�ˢ������
+  const workStatus = new WorkStatusStore();
+  // ����״̬���� �� д�� S��ǰ�� 1s ��ѯ /state �� counter �仯��Ⱦ����
+  // **ֻ��������ı���ʱ��д**��ÿ��д�����ƽ� counter��ǰ�˾ݴ��ز���λ��������
+  // �Ự�¼����ܣ�ÿ�� tool/call ��������������д��Ѷ���ˢ�ɻõ�Ƭ��
+  // �о���**����**��state + task�������� store �� ts��ts �� Date.now()������ֱ��ʣ���
+  // ͬһ�������������λᱻ���г�"û�仯"��©д�������������¼��ͻ�ȵ�����
+  // data �ﲻ�ٴ� ts��������û�С�����Ҷ�� counter �е�����һ����Ư�Ƶĵڶ��źš�
+  let publishedWork = '\u0000';
+  const publishWorkStatus = (): void => {
+    const snap = workStatus.snapshot();
+    const key = String(snap.state) + '\u0000' + String(snap.task);
+    if (key === publishedWork) return;
+    publishedWork = key;
+    state.writeSection('workStatus', { state: snap.state, task: snap.task });
+  };
+  // ϵͳ֪ͨ֡��host ���� DSH �����¼�����֪ͨ֡��֡��Լ�� shared/notify.ts һ�£���д�� S ��
+  // sections.notify������� 1s ��ѯ /state �� toast��
+  // ������DSH 0.1.5 ɾ��������� api.events.mux/host �¼�������Ϊ host ת��ͨ������
+  // ������ DSH �汾��仯���¼� API��
+  // **����**���󵽸����ȵ�����ͬһ��������ֻ�����һ�������������ȡ�ᡪ��1 �����������ϵͳ֪ͨ
+  // ����û�����壨���������������Բ��ٴ� seq / ����֡���У�����ǰ�� frames ���������ɾ����
+  const pushNotifyFrame = (frame: HostNotifyFrame): void => {
+    state.writeSection('notify', frame);
+  }; /** ÿ�Ự turn ����־��goal �������ж���������չʾ�������� turn/end �վ����壩 */
+  const turnFlags = new Map<string, WorkStatusTurnContext>();
+  /** ��̬��success/error��չʾ���ڶ�ʱ����Լ 60s �����ûỰ��Ŀ���¾����̬���ٸ�������Bug 2/3�� */
+  const terminalTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const TERMINAL_KEEP_MS = 60 * 1000;
+  /** ȡ��ĳ�Ự��ִ�е���̬������Ự�ѻص�����̬���Ǵ���������Ȳ�����Ҳ�����ţ�����ֻ���� */
+  const cancelTerminalCleanup = (sessionId: string): void => {
+    const t = terminalTimers.get(sessionId);
+    if (t === undefined) return;
+    clearTimeout(t);
+    terminalTimers.delete(sessionId);
+  };
+  /** ��һ����̬�����ʱ����ÿ�Ựһ���������������� */
+  const scheduleTerminalCleanup = (sessionId: string): void => {
+    if (terminalTimers.has(sessionId)) return;
+    const t = setTimeout(() => {
+      terminalTimers.delete(sessionId);
+      const sessionState = workStatus.stateOf(sessionId);
+      if (sessionState === 'success' || sessionState === 'error') {
+        workStatus.clear(sessionId); // ��Ŀ��ͬ�������������İ�һ����ʧ��������������
+        turnFlags.delete(sessionId);
+        publishWorkStatus(); // ����Ҫд S������ǰ��һֱ���������¾����̬
+      }
+    }, TERMINAL_KEEP_MS);
+    terminalTimers.set(sessionId, t);
+  };
+  // ֪ͨ��ţ�issue #114�������Ի���ɡ������̵����ȹ��𣬵���ȷ�������Ựȷʵû�����ٵ�
+  // �����ܵ������Ӵ��� / �Ŷӳ�Ա����̨���񡢻�Ծ������һ�ǿ� �� ������һ֡����
+  //
+  // Ϊʲô�����ӳٶ�����ͬ���飺`workspace/session-activity` �� turn �������**�� Agent ��
+  // status**���� turn/end ���ڻغ���� finally ��׷�ӵġ���ͬ����һ�����Լ����� running���оݱ�Ȼ
+  // �ǿգ��ա���һ�ǿվͲ�����д���ÿһ��֪ͨ���̵����� notify-events.ts �� hasBlockingActivity����
+  // �ӳ�ͬʱ�á���Ա�ձ� idle��Lead ��һ�� send_message �ְ������ѡ��Ĵ��ڹ�ȥ��������������Ӻ�
+  // ����Ͷ�ݡ�����Ŀ�����һ�֣���
+  //
+  // �оݲ����ã�����û��� workspace��standalone α ctx û�� waterfall�������״������ֵ��״���ԣ�
+  // �� һ�ɷ��У����ɶ൯һ����Ҳ������֪ͨ��һ���������������ơ�
+  const NOTIFY_ACTIVITY_DELAY_MS = 1500;
+  /** ÿ�Ựһ�����鶨ʱ����ͬ�Ự������βֻ�������һ�Σ��󵽸����ȵ����뵥��֡ͬ���壩 */
+  const notifyActivityTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** waterfall ֻ�õ�ǩ�������DSH δ�������¼�������/��Ӧ���ͣ���������������� ctx ͬΪ any ����״һ�£� */
+  type Waterfall = (name: string, request: unknown, next: () => Promise<unknown[]>) => Promise<unknown>;
+  /** �����Ự�Ƿ������ܵĻ�оݲ�����һ�� false������ */
+  const sessionHasRunningWork = async (sessionId: string): Promise<boolean> => {
+    const waterfall = (ctx as { waterfall?: Waterfall }).waterfall;
+    if (typeof waterfall !== 'function') return false;
+    try {
+      const activity = await waterfall.call(ctx, 'workspace/session-activity', { sessionId }, () =>
+        Promise.resolve([]),
+      );
+      return hasBlockingActivity(activity);
+    } catch {
+      return false; // ��ѯʧ�ܲ�����֪ͨ���롸�оݲ�����ʱ���С�ͬһ���ԣ�
+    }
+  };
+  /** ��һ����Ŷ�ʱ��������ȷ�Ͽ��в�����һ֡ */
+  const scheduleCompletionNotify = (sessionId: string, event: unknown): void => {
+    const prev = notifyActivityTimers.get(sessionId);
+    if (prev !== undefined) clearTimeout(prev);
+    notifyActivityTimers.set(
+      sessionId,
+      setTimeout(() => {
+        notifyActivityTimers.delete(sessionId);
+        void (async () => {
+          if (await sessionHasRunningWork(sessionId)) return; // ���л����������β���ٵ�
+          const frame = reduceNotifyFrame(event as Parameters<typeof reduceNotifyFrame>[0]);
+          if (frame) pushNotifyFrame(frame);
+        })();
+      }, NOTIFY_ACTIVITY_DELAY_MS),
+    );
+  };
+  // �����ǰ���衹��/pet ѡ��/chat ʹ�ã���ȫ�ֵ�ֵ���ֻỰ���������ڴ棬�����Ĭ�ϵ�һֻ
+  let activePetId = '';
+  // ���������ڵ��ȵġ��ϴ�����ʱ�̡���������������ľݴ��жϵ�û���㡣
+  // ����ǰ��ݽ����� whisperCache������ + ts �Ƚϣ�������"�ò�������"�ɵ��Ȳ������
+  // "���ɽ��"ֱ��д S������˹���ͬһ���� S ��Ȼ��֤��������Ҫ�ڶ��ݻ��档
+  const lastWhisperAt = new Map<string, number>();
+
+  // �Ի������ļ���Ψһ��д�� = �����̣������/�������˶�ֻ�ǿͻ��� �� ͬһʵ����Ȼ����ͬһ�ݼ��䣩��
+  // �ṹ˫�㣺{ <����Ͱ assetRoot ?? petId>: { <ʵ�� id>: { messages: ChatMemoryMessage[] } } }
+  const memoryPath = join(userRoot, 'memory.json');
+  // �Ի�д�������ж��У�read-modify-write �Ŷ�ִ�У�������ͬʱ�Ի�ʱ����д��
+  let chatQueue: Promise<void> = Promise.resolve();
+
+  /** �������ļ��������� �� �գ��� �� ��ʽ���� + ����ԭʼ�ļ���������Ĭ�����ݣ�+ �ؽ��ռ��� */
+  const readMemory = async (): Promise<Record<string, Record<string, { messages: ChatMemoryMessage[] }>>> => {
+    let raw: string;
+    try {
+      raw = await readFile(memoryPath, 'utf8');
+    } catch {
+      return {}; // �ļ������� = ���޼���
+    }
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      if (!parsed || typeof parsed !== 'object') throw new Error('not an object');
+      return parsed as Record<string, Record<string, { messages: ChatMemoryMessage[] }>>;
+    } catch (e) {
+      console.error(
+        `dsh-whale-girl: �����ļ����ѱ��ݣ��Ի�����ͷ��ʼ����${memoryPath}��${e instanceof Error ? e.message : String(e)}��`,
+      );
+      try {
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(`${memoryPath}.bak-${Date.now()}`, raw, 'utf8');
+      } catch {
+        /* ����ʧ�ܽ��澯������� */
+      }
+      return {};
+    }
+  };
+
+  const writeMemory = async (mem: Record<string, Record<string, { messages: ChatMemoryMessage[] }>>): Promise<void> => {
+    await mkdir(userRoot, { recursive: true });
+    await writeFile(memoryPath, JSON.stringify(mem, null, 2), 'utf8');
+  };
+
+  /** ��һ�ζ�д������ж��У�ͬ�����ڷ������������ fn �Ľ�� */
+  const withMemoryLock = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = chatQueue.then(fn, fn);
+    chatQueue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  };
+
+  // ---- �������ѣ�Ψһ��� readAllConfig��./config����������ֵ������ȷ������ֻ���ֶΣ���У�� ----
+
+  /** ĳ������������� system��������Ŀ�����ļ����� �� main ��Ŀ���� whisperPrompt���ϲ�������Ĭ�ϣ�
+   *  + ������׷��һ������������name��ȱʧ�Ѱ� id��������������Ի�����ͬһƴװ��
+   *  + ĩβ׷��һ��**ʱ�䱳��**��time-context.ts������/����/ʱ��/ʱ��/�����ջ���ĩ����
+   *    ��������Ի�����ÿ�����ɶ�����������������õ�����Զ��**��ǰ**ʱ�̣�����Ҫ�����ˢ�»��ƣ�
+   *    �Ƿ� Date ʱ��Ϊ�մ�����ʱ���в��ӣ�����û��ʱ����Ϣ��Ҳ���� NaN ƴ����ʾ�ʣ��� */
+  const petSystemPrompt = (petId: string, cfg: Record<string, Record<string, unknown>>): string => {
+    const found = findPetInstance(cfg, petId);
+    const conf = found ? found.conf : (cfg.main ?? {});
+    const prompt = typeof conf.whisperPrompt === 'string' ? conf.whisperPrompt : '';
+    const name = found ? String(found.pet.name || found.pet.id || petId) : petId;
+    const nameLine = '��������ǡ�' + name + '����';
+    const base = prompt ? prompt + '\n' + nameLine : nameLine;
+    const time = timeContextOf(new Date());
+    return time ? base + '\n' + time : base;
+  };
+
+  /** �Ի�����������1 �� = 1 �� 1 �𣩣�������Ŀ/����Ŀ�� chatMemoryRounds���ϲ�������Ĭ�ϷǸ����֣� */
+  const memoryRounds = (petId: string, cfg: Record<string, Record<string, unknown>>): number => {
+    const found = findPetInstance(cfg, petId);
+    const v = Number(found?.conf.chatMemoryRounds ?? cfg.main?.chatMemoryRounds);
+    return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 5;
+  };
+
+  /** ����/����ĳ�����һ����������� GET ��˵��ֶ��������õ�ͬһ�߼�����
+   *  ÿֻ����������ɣ�������Ŀ�����裩�����ɳɹ���д�� S �� pets.<id>.say����
+   *  ������ / �������� / �Ի��ظ���ǰ�˱�������**ͬһ��չʾ��·**��ͬһ�� triggerWhisper��
+   *  ͬһ�����ݲۡ�ͬһ�� events.whisper �����������Ժϲ���ͬһ��Ҷ�ӣ�"�����ڲ��ظ�"��
+   *  ���Ȳ�� lastWhisperAt ��֤��������Ҫһ�� whisperCache����˹���Ҳ�� S ��Ȼ��֤����
+   *  ��ͼ��whisperImageEnabled ����ʱ�����ӱ������**����� 1 ��**��������ע��ָ����ı�һ��д�� */
+  const publishWhisper = async (petId: string): Promise<boolean> => {
+    const cfg = readAllConfig(configPaths);
+    const found = findPetInstance(cfg, petId);
+    const conf = found ? found.conf : (cfg.main ?? {});
+    const entry = found ? found.entry : 'main';
+    const system = petSystemPrompt(petId, cfg);
+    // ��ͼ��ȫ�ֿ��عر� / ��Ϊ�� / ����ͼƬȫȱʧ �� ���ı�����������˻�Ϊԭ��Ϊ��
+    const meme = conf.whisperImageEnabled === true ? pickMeme(readMemePool(conf.memes, memeDirsFor(entry))) : undefined;
+    // ģ�ͣ���Ŀ���õ� whisperModel ���ȣ���� = ��ָ���������ɲ�ʧ�ܻ���䵽��ǰ�Ի���ģ������һ��
+    const result = await generateWhisper(ctx, system, meme, configuredModel(conf, 'whisperModel'));
+    if (!result.ok) {
+      // ʧ��**��д S**�������ǰһ�£���Ĭ���� + console.warn����α���İ��������������ݣ�
+      console.warn(
+        '[dsh-whale-girl] ����������ʧ�� pet=' +
+          petId +
+          ' reason=' +
+          result.reason +
+          (result.message ? ' ' + result.message : ''),
+      );
+      return false;
+    }
+    state.writePet(petId, 'say', result.image ? { text: result.text, image: result.image } : { text: result.text });
+    return true;
+  };
+
+  /** ��ĳֻ����Ի�����ȡ������� �� ���ɻظ� �� д����� �� �ѻظ�д�� S �� pets.<id>.say��
+   *  �� POST /chat�������˵㣩�� /chat �����ͬһ��·�������ڶ�д�������˽���д�̣���
+   *  ��ͼ��chatImageEnabled ����ʱ�����ѱ�����嵥����ģ�Ͱ��ﾳѡһ�ţ����г��ڲ���ظ�д�ء� */
+  const chatWithPet = async (
+    petId: string,
+    text: string,
+    override?: { provider: string; model: string },
+    /**
+     * Ҫ��Ҫ��**��Ⱦ��**�ѻظ��������д�� `say` �� `speak` ��ǣ���
+     *
+     * - ���ֶԻ����Ҽ����Ի������� true������û�б�Ĳ���;��������Ⱦ�˳�����
+     * - ����Ի��� **false**��`/voice/turn` �ĵ��÷��������ҳ���Լ���ϳɲ��ţ�
+     *   �������洰��һ�ξͳ���**ͬһ�仰������**������ʵ��ȵ�����
+     */
+    speakReply = true,
+    /**
+     * ����Ի��������ʶ���������֡ + ˵������
+     * �����ʹ�ͼ�ش�û�о��Ǵ��ı�����ͬһ��������·���������֧��
+     */
+    preSight?: { note: string; images: Uint8Array[] },
+  ): Promise<
+    | { ok: true; text: string; image?: string; fellBackTo?: string }
+    | { ok: false; reason: 'provider-missing' | 'generate-error'; message?: string }
+  > =>
+    withMemoryLock(async () => {
+      const cfg = readAllConfig(configPaths);
+      const rounds = memoryRounds(petId, cfg);
+      const found = findPetInstance(cfg, petId);
+      const conf = (found ?? { conf: cfg.main ?? {} }).conf;
+      // ���裺������Ŀ�� whisperPrompt���ϲ�������Ĭ�ϣ�+ ������������������ͬһƴװ��
+      const system = petSystemPrompt(petId, cfg);
+      // ��ͼ�����عر� �� �ճأ�ָ��������������룬�����Ϊ����һ�£���Ŀ¼����������Ŀȡ��
+      // �������ޣ�chatImageLimit��0 = �����ƣ��������嵥ÿ����Ϣ��Ҫ�����ضϺ�������޿ɿء�
+      const pool =
+        conf.chatImageEnabled === true
+          ? limitPool(readMemePool(conf.memes, memeDirsFor(found?.entry ?? 'main')), Number(conf.chatImageLimit))
+          : [];
+      const mem = await readMemory();
+      const bucketKey = found?.entry ?? petId;
+      const bucket = (mem[bucketKey] ??= {});
+      const entry = (bucket[petId] ??= { messages: [] });
+      // rounds = 0���û��ص���ʷ���� ����ʷ�������β�� rounds �֣�1 �� = 1 �� 1 �𣩡�
+      // ����д slice(-rounds * 2)��-0 �� JS �� === 0��slice(-0) ����������������ǿա�
+      const list = sliceMemoryRounds(entry.messages, rounds);
+      // ģ�ͣ���Ŀ���õ� chatModel ���ȣ���� = ��ָ���������ɲ�ʧ�ܻ���䵽��ǰ�Ի���ģ������һ�Ρ�
+      // override ����������·�ڡ���ǰģ�ͱ�������ʱ��ʽ��һ�ң��� /voice/turn����
+      // ����Ի���/chat���Ҽ���������Զ��������Ϊ����������һ�¡�
+      const preferred = override ?? configuredModel(conf, 'chatModel') ?? resolveCurrentModel();
+
+      /**
+       * ����Ի�����ʶ������ץ���Ķ�֡����ģ�͡�
+       *
+       * ͼƬ�����ȹ������洢��DSH ��ͼƬ��Ϣֻ�� ref�������������һ�Ρ�
+       * ��������ɾ����ʶ��ͬһ���ھ�����ؼ��٣���
+       * �治��ȥ��**�����ɴ��ı�**������һ��ʧ�ܲ��������ֶԻ�ʧ�ܡ�
+       */
+      let pictures:
+        | ReadonlyArray<{ attachmentId: string; mediaType: string; bytes: number; width: number; height: number }>
+        | undefined;
+      let userTextWithNote = text;
+      if (preSight !== undefined) {
+        const attachments = getAttachments();
+        if (attachments !== undefined) {
+          try {
+            const refs = await attachments.saveImages(
+              preSight.images.map((data, i) => ({ data, mediaType: 'image/jpeg', name: 'voice-' + (i + 1) + '.jpg' })),
+            );
+            pictures = refs as unknown as typeof pictures;
+            // ˵����������ǰ�棺��������������֡���ܶԱȱ仯
+            userTextWithNote = preSight.note + '\n' + text;
+            // ��ؼ���
+            void purgeAttachmentObjects(ctx, refs);
+          } catch (e) {
+            console.warn('[dsh-whale-girl] ����ʶ����ͼʧ�ܣ������ı�������' + (e instanceof Error ? e.message : String(e)));
+          }
+        }
+      }
+
+      let generated = await generateChat(ctx, system, list, userTextWithNote, pool, preferred, pictures);
+
+      /**
+       * �������䣨���������������һ������
+       *
+       * Ϊʲô���������ﶵ����������ʱ��û�������κ� `agent/request`��
+       * `resolveCurrentModel()` ֻ���˻� `agentDefaultModel` ��**Ĭ��ֵ**����
+       * ���Ǹ�Ĭ��ֵ������Ͳ����������õ�ģ�ͣ�ʵ����� workbuddy-ai ����þ�����
+       * ����ǡ�������һ�ζԻ��ض�ʧ��һ�Ρ�������ܲ
+       *
+       * ֻ��**��ȷ������**���䣺����ʧ�ܣ�ȱƾ֤ / ģ�Ͳ����� / ���磩��һ��ֻ���ڸ����⡣
+       */
+      let usedFallback: { provider: string; model: string } | undefined;
+      if (!generated.ok && /429|soft_rate|rate.?limit|Ƶ��/i.test(generated.message ?? '')) {
+        /**
+         * ��**��ͬһ������ѡ����һ��**���ٿ��ǻ������̡�
+         *
+         * ԭ��`generateChat` �ڲ�������һ����ѡ��������� preferred �� ��ǰĬ��ģ�ͣ���
+         * ����ѡ���Ựʵ��ģ�ͣ�ż��ʧ��ʱ�������Զ����䵽**Ĭ��ģ��**�����Ǹ�Ĭ��ֵ
+         * ���������������� workbuddy-ai ���� �������ձ������� 429 ��ʵ����**���׺�ѡ**��
+         * ������ѡ�޹ء����˿���������������Ϊģ��ʶ���ֻ��ˡ�
+         * ����������ѡһ�Σ��ܵ��������󱨡�
+         */
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, 300));
+        const retry = await generateChat(ctx, system, list, text, pool, preferred);
+        if (retry.ok) {
+          generated = retry;
+        } else {
+          const currentProvider = (preferred ?? resolveCurrentModel())?.provider ?? '';
+          const alt = await pickFallbackModel(currentProvider);
+          if (alt !== undefined) {
+            const second = await generateChat(ctx, system, list, text, pool, alt);
+            if (second.ok) {
+              generated = second;
+              usedFallback = alt;
+              // ѧ���Ķ���Ҫ��ס���´α�������ֱ����������ܵģ������̣��������Ȼ�ǵã�
+              persistObservedModel(alt);
+              console.warn(`[dsh-whale-girl] ��ǰģ���������Ѹ��� ${alt.provider}/${alt.model} ���Գɹ�`);
+            }
+          }
+        }
+      }
+      if (!generated.ok) return generated;
+      const now = Date.now();
+      entry.messages.push({ role: 'user', content: text, ts: now });
+      // ����ֻ�����ģ���ͼ��չʾ�㣬���������ġ��������´������ѱ�ǵ���ʷ����ȥ��
+      entry.messages.push({ role: 'assistant', content: generated.text, ts: now });
+      await writeMemory(mem);
+      // �ظ�д�� S����������ͬһ��Ҷ�ӣ�ǰ�˱�������ͬһ��չʾ��·��
+      state.writePet(
+        petId,
+        'say',
+        // `speak` ��**����Ⱦ�˵Ŀ���**�������ظ��ò��������洰�������
+        //  - ���ֶԻ� �� true������֮��û�б�Ĳ���;����
+        //  - ����Ի� �� false�����÷��Լ������������洰������ͬһ�����飩
+        // ������ / �㲥��Զû������ֶΣ�ֻ�����ݡ�����Ȼ��һ�������������
+        speakReply
+          ? generated.image
+            ? { text: generated.text, image: generated.image, speak: true }
+            : { text: generated.text, speak: true }
+          : generated.image
+            ? { text: generated.text, image: generated.image }
+            : { text: generated.text },
+      );
+      // �ı�����ش���������·Ҫ����ȥ�ϳɣ����ܿ�ǰ������ѯһ�� S
+      // ����������ֻ�� { ok: true }������ /voice/turn �� reply ��Ϊ�գ�ǰ�˾�Ĭ������
+      return {
+        ok: true as const,
+        text: generated.text,
+        ...(generated.image ? { image: generated.image } : {}),
+        ...(usedFallback === undefined ? {} : { fellBackTo: `${usedFallback.provider}/${usedFallback.model}` }),
+      };
+    });
+
+  /**
+   * ��ǰ��Ч�����б� = readAllConfig ��Ʒ��ƽ��main + �ļ�����ȫ����Ŀ���ϲ����ѱ�֤ id Ψһ��
+   * �ֶ�������������������ģʽ��������ȡ��
+   */
+  const effectivePetList = (): Record<string, unknown>[] => flattenPetList(readAllConfig(configPaths));
+
+  /** ���ˢ�����ڣ��룩����Ʒ main ��Ŀ�� eventsRefreshSec.balance���ϲ�������Ĭ�ϣ��Ƿ����� 1800�� */
+  const balancePeriodSec = (cfg: Record<string, Record<string, unknown>>): number => {
+    const ers = cfg.main?.eventsRefreshSec as Record<string, unknown> | undefined;
+    const n = Number(ers?.balance);
+    return Number.isFinite(n) && n > 0 ? n : 1800;
+  };
+
+  /** ���������ڣ��룩���ó���**������Ŀ**�� eventsRefreshSec.whisper���ϲ�������Ĭ�ϣ��Ƿ����� 300�� */
+  const whisperPeriodSec = (cfg: Record<string, Record<string, unknown>>, petId: string): number => {
+    const conf = (findPetInstance(cfg, petId) ?? { conf: cfg.main ?? {} }).conf;
+    const ers = conf.eventsRefreshSec as Record<string, unknown> | undefined;
+    const n = Number(ers?.whisper);
+    return Number.isFinite(n) && n > 0 ? n : 300;
+  };
+
+  /**
+   * ˢ����д�� S ���� host ��**Ψһ**������ѯ�㡣
+   *
+   * ����ǰ��ÿ���ͻ��˸��԰��Լ��Ķ�ʱ��ȥ�飨�����һ�� + ����ÿ����һ������ͬһ���ⲿ API
+   * ���ظ��������˻����ܿ����¾ɲ�һ�µ����ݡ�����ֻ������飬���˶��� /state ��ͬһ�ݽ����
+   *
+   * ʧ��Ҳд�� S��reason ���� unsupported / credential-missing / fetch-error������������Ҫ��
+   * ����˵�����ݣ����ܾ�Ĭ�������쳣ͬ����� fetch-error�����̡�
+   *
+   * @param manual ���ˢ���ǲ���"�û�Ҫ��"��/balance ������桸�鿴���˵�����
+   *   ���������һ��д��Ҷ�ӣ�ֻ�� host ֪����˭Ҫ�ģ�ǰ�˾ݴ˾���������ʱҪ��Ҫ**�ص�**
+   *   ����˵����decideBalanceNotice �� explicit������ˢ����ֻ��ԭ��仯ʱ��һ�Σ���÷���ˢ������
+   */
+  /**
+   * �˺ŷ���Ҫ��ĵ��÷���ݣ�`AccountClientMetadata`����Platform ������������ͻ���ͷ��
+   * ֻӰ��**������Դ��ʶ**��**����˱��ػ��İ�**�������������ֵ����֡�
+   *
+   * - version��������汾�������� package.json������������ '0.0.0'�������ֶ�ֻ�Ǳ�ʶ��
+   * - locale������������Ĳ�Ʒ���̶� `zh-CN`��Platform ���һ�� zh_CN��
+   * - timezoneOffsetSeconds������ UTC ƫ�ƣ�������Ϊ +28800��
+   */
+  const accountClientMetadata = (): { version: string; locale: string; timezoneOffsetSeconds: number } => {
+    let version = '0.0.0';
+    try {
+      const raw = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as { version?: unknown };
+      if (typeof raw.version === 'string' && raw.version.length > 0) version = raw.version;
+    } catch {
+      // ��������Ӱ���ѯ��version ֻ��ƽ̨�����Դ��ʶ
+    }
+    return { version, locale: 'zh-CN', timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60 };
+  };
+
+  const refreshBalance = async (manual = false): Promise<void> => {
+    const mark = <T>(v: T): T | (T & { manual: true }) => (manual ? { ...v, manual: true } : v);
+    try {
+      const sel = resolveCurrentModel() ?? { provider: '', model: '' };
+      const resolveKey = async (ref: string): Promise<string | undefined> => {
+        const rc = await ctx.credentials.resolve(credentialRef(ref));
+        return rc?.value;
+      };
+      // `deepseek-account`����Ѷ�� / ƽ̨��¼��û�� API Key������ƾ֤�� DSH �˺ŷ���
+      // ���е���Ȩ��¼��ֻ�ܾ� getBalance ��ѯ���˺ŷ�����**��ѡ**������ȡ�����Ž�
+      // inject������ûװ�˺Ų��ʱ�����ڳ�����ʱ��·�ɱ� credential-missing �����Ǳ���
+      const resolveAccount = async (): Promise<AccountBalanceSnapshot | null | undefined> => {
+        const account = ctx.get('deepseekAccount', false);
+        if (!account) return undefined;
+        return (await account.getBalance(accountClientMetadata())) as AccountBalanceSnapshot | null | undefined;
+      };
+
+      let result = await queryBalance(sel.provider, resolveKey, resolveAccount);
+
+      // ��ǰ������û�����ӿڣ��������м̳������� workbuddy-ai��ʱ**���䵽�нӿڵ�**
+      // ����������˭���ˣ�������ֻ��һ�䡸��֧�֡���˳��ȡ�ԡ����������ڿ����Ǳ��ˡ���
+      // DSH �˺ţ�deepseek-account���� DeepSeek �ٷ� API Key��
+      //
+      // ֻ�� `unsupported` ʱ���䣺ȱƾ֤ / ץȡʧ����**��ʵ����**��
+      // ���Ļ�һ����ʾ���ڸ����⣨�����ǡ���Ҫ�ü����̶��Ĵ�ط����ķ��棩��
+      if (!result.ok && result.reason === 'unsupported') {
+        for (const candidate of ['deepseek-account', 'deepseek-official'] as const) {
+          const attempt = await queryBalance(candidate, resolveKey, resolveAccount);
+          if (!attempt.ok) continue;
+          const data = attempt.data as unknown as Record<string, unknown>;
+          result = { ...attempt, data: { ...data, fallbackFrom: sel.provider } } as unknown as typeof result;
+          break;
+        }
+      }
+
+      state.writeSection('balance', mark(result));
+    } catch (e) {
+      state.writeSection(
+        'balance',
+        mark({
+          ok: false,
+          provider: 'unknown',
+          reason: 'fetch-error',
+          message: e instanceof Error ? e.message : String(e),
+        }),
+      );
+    }
+  };
+
+  /**
+   * ��������ʱ��һ�����ģ�͡�
+   *
+   * ֻ��������·�ã��� /voice/turn����������������˷�˵������Ĭʧ�����ˣ�
+   * �� 429 ��**�����̶��**���⣬��һ��ͨ�����̿��á�
+   *
+   * ѡ��˳��DSH �˺ţ�deepseek-account���� DeepSeek �ٷ� �� ����������ģ�͵ķ����̣�
+   * ͬ���������������ִ� flash �ģ����ˡ��죬�ʺ����ģ�����ǰ��������Զ������
+   */
+  const pickFallbackModel = async (currentProvider: string): Promise<{ provider: string; model: string } | undefined> => {
+    const llm = ctx.llm as
+      | { listProviders?: () => Array<{ id: string }>; listModels?: (p: string) => Promise<Array<{ id: string }>> }
+      | undefined;
+    if (!llm?.listProviders || !llm.listModels) return undefined;
+    try {
+      const providers = llm.listProviders();
+      const rank = (id: string): number => {
+        const order = ['deepseek-account', 'deepseek-official'];
+        const i = order.indexOf(id);
+        return i < 0 ? order.length : i;
+      };
+      const ordered = [...providers].sort((a, b) => rank(a.id) - rank(b.id));
+      for (const provider of ordered) {
+        if (provider.id === currentProvider) continue;
+        try {
+          const models = await llm.listModels(provider.id);
+          if (models.length === 0) continue;
+          const hit = models.find((m) => /flash/i.test(m.id)) ?? models[0];
+          return { provider: provider.id, model: hit.id };
+        } catch {
+          // �÷�����û��ƾ֤ / ������ �� ����һ��
+        }
+      }
+    } catch {
+      /* ö��ʧ�ܾͲ����䣬��ԭ�����ճ��ϱ� */
+    }
+    return undefined;
+  };
+
+  /** ��ǰ�������� id��/pet ��ѡ���Դ��� �� �ó��δѡ/��ʧЧ �� ��Ч�����б��һֻ�������ڣ������Ĭ�ϣ� */
+  const resolveActivePetId = (): string => {
+    try {
+      const eff = effectivePetList();
+      if (eff.length === 0) return '';
+      if (activePetId && eff.some((p) => String(p.id) === activePetId)) return activePetId;
+      return String(eff[0].id);
+    } catch {
+      return activePetId;
+    }
+  };
+
+  /** �������ʾ����name��ȱʧ���� id�����������İ��� */
+  const petDisplayName = (pet: Record<string, unknown>): string => {
+    const n = String(pet.name ?? '').trim();
+    return n || String(pet.id ?? '');
+  };
+
+  let hasDesktopPet = false;
+  const refreshDesktop = (): void => {
+    hasDesktopPet = false;
+    try {
+      hasDesktopPet = effectivePetList().some((p) => isDesktopVisible(p.display));
+    } catch (e) {
+      ctx.logger?.warn?.(`[dsh-whale-girl] �������÷Ƿ�������ģʽ��������${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  refreshDesktop();
+
+  /** ����ɼ������б��[{id,size}]����͸�� Helper �������������ֲ����ڣ�ÿ����һ������ */
+  const desktopPetList = (): Array<{ id: string; size: number }> => {
+    try {
+      return effectivePetList()
+        .filter((p) => isDesktopVisible(p.display))
+        .map((p) => ({ id: String(p.id), size: Number(p.size) }));
+    } catch {
+      return [];
+    }
+  };
+
+  let helper: HelperProcess | undefined;
+  let startRetryTimer: NodeJS.Timeout | undefined;
+  let electronEnsure: Promise<void> | undefined;
+  let disposed = false;
+  /** ����ͼ�λ�������ʾֻ�ڽ������������ڴ�һ�Σ������ػ�ѭ��ˢ�� */
+  let displayWarned = false;
+
+  /** ����ȷ�ϴ��ڵ� Electron ·���������� Helper��ÿֻ�������һ���ֲ�С���ڣ��� */
+  const launchHelper = (electronPath: string | undefined): void => {
+    if (helper || disposed) return;
+    if (!hasDesktopPet) return; // �޳�����ʾ�����棨display �� desktop/both���������
+    const port = typeof ctx.webServer?.port === 'number' ? ctx.webServer.port : 0;
+    if (!port || port <= 0) {
+      // webServer ������δ��ɼ�����OS ����˿�ʱ port ����Ϊ 0�����ӳ����ԡ�
+      if (!startRetryTimer) {
+        startRetryTimer = setTimeout(() => {
+          startRetryTimer = undefined;
+          launchHelper(electronPath);
+        }, 500);
+        startRetryTimer.unref?.();
+      }
+      return;
+    }
+    const origin = `http://127.0.0.1:${port}`;
+    // �Ҽ�������վ������ȥ������ origin��DSH ֻ�� `GET /` ���ܱ����̵�������ƣ������� authority ��
+    // ǩ�� Cookie����������һ�� 401 ���� Ĭ�������û�и� authority �� Cookie ʱ��Ȼ�򲻿���#87����
+    // ���Ƶȼ۵�¼̬��ֻ���ӽ��̻��������ݵ� helper �ڴ棬�����̡�������־��authority ���뱣��
+    // 127.0.0.1���� localhost ������ Cookie���������ﴫ origin ��������ƴ��ַ��
+    const siteUrl = ctx.connection.authenticatedUrl(origin);
+    // ������Ⱦ��Ҳ��ͬһ�� handlePetRoute �ó�Ʒ���ã�ÿֻ����һ���ֲ�С���ڣ����ܵ������� HTTP����
+    // DSH Desktop 2.0.3+ ��������������̵��� HTTP �������������բ��ֻ���д����Ƶ�����
+    const configUrl = `${origin}${ROUTE_PREFIX}/config`;
+    helper = new HelperProcess(
+      {
+        electronPath,
+        env: {
+          DSH_WHALE_CONFIG_URL: configUrl,
+          // �Ѽ�Ȩվ�� URL����������������ƣ���ֻ�� helper �ġ�����վ��ʹ�ã��κ���־�����������
+          DSH_WHALE_SITE_URL: siteUrl,
+          // ������̬�������������վ����ȥ��ͬ���˵�������������壩��
+          //   desktop = ������ DSH ����Ӧ�� �� ��������Ӧ�������ڣ�helper �� dsh://open���� main.js��
+          //   site    = dsh web / ����ģʽ �� ϵͳĬ���������վ�㣨ԭ��Ϊ�����ƻ���
+          DSH_WHALE_OPEN_TARGET: isDesktopHost() ? 'desktop' : 'site',
+          DSH_WHALE_SCALE: '1',
+          // �� bridge Э�飺main.js ע�� dsh-whale-girl-bridge scheme������Ⱦ�����󾭹ܵ�ת������
+          DSH_WHALE_BRIDGE: '1',
+          // ÿֻ�������һ���ֲ�С���ڣ�͸�������б��[{id,size}]��
+          DSH_WHALE_PETS: JSON.stringify(desktopPetList()),
+        },
+        // bridge Э�鴦���� = HTTP ·��ͬһ�� handlePetRoute��ҵ���߼�Ψһ��������Ȼһ�£���
+        // �زĹ��ļ�·����main.js ���ж��̣���json/text �� body
+        bridgeHandler: async (req) => {
+          const result = await handlePetRoute(req.url ?? '/', req.method ?? 'GET', req.body);
+          if (result.kind === 'file') {
+            // file ��֧�� 200��404/400 ���� text ��֧��
+            return { id: req.id, status: 200, contentType: result.contentType, file: result.file };
+          }
+          if (result.kind === 'text') {
+            return { id: req.id, status: result.status, contentType: 'text/plain; charset=utf-8', body: result.body };
+          }
+          if (result.kind === 'buffer') {
+            // bridge �� JSON ��Э�飬�����˶����ƣ����洰����������� HTTP��
+            // ��ʽ��������Ƿ��ؿ� body ���� �� body ����ǰ����Ϊ���ϳɳɹ���û�������
+            return {
+              id: req.id,
+              status: 501,
+              contentType: 'application/json; charset=utf-8',
+              body: JSON.stringify({ ok: false, reason: 'bridge-unsupported', message: '��������Ӧ������ bridge������ HTTP' }),
+            };
+          }
+          return {
+            id: req.id,
+            status: result.status,
+            contentType: 'application/json; charset=utf-8',
+            body: JSON.stringify(result.obj),
+          };
+        },
+      },
+      ctx.logger ?? console,
+    );
+    try {
+      helper.start();
+      ctx.logger?.info?.(`dsh-whale-girl desktop helper started (config: ${configUrl})`);
+    } catch (e) {
+      ctx.logger?.warn?.(`dsh-whale-girl desktop helper start failed: ${e instanceof Error ? e.message : String(e)}`);
+      helper = undefined;
+    }
+  };
+
+  /** �������� Helper����̽�Ȿ�� Electron��ȱʧʱ�������첽����
+   *  ���� spawn �ӽ��̣�CLI node �� DSH Desktop �����ã���������ɺ��Զ����� */
+  const startHelper = (): void => {
+    if (helper || electronEnsure || disposed) return;
+    if (!hasDesktopPet) return; // �޳�����ʾ�����棨display �� desktop/both���������
+    // ��ͼ����ʾ������Linux ������ / ��������ֱ�ӷ�������̽�⡢�����ء�������
+    // ���� Electron �ᡸ���𼴱��������ػ�ѭ�����������ˢ�� core dump��
+    if (!hasGraphicalDisplay()) {
+      if (!displayWarned) {
+        displayWarned = true;
+        ctx.logger?.warn?.(
+          '[dsh-whale-girl] δ��⵽ͼ����ʾ������DISPLAY/WAYLAND_DISPLAY ��Ϊ�գ���������������' +
+            '������ڳ��ﲻ��Ӱ�죻�����ڷ���������������ģʽ�������� Xvfb ������ DSH_WHALE_DESKTOP_FORCE=1��',
+        );
+      }
+      return;
+    }
+    const found = resolveElectronPath();
+    if (found) {
+      launchHelper(found);
+      return;
+    }
+    console.warn(`[dsh-whale-girl] Electron not found, downloading to ${defaultElectronExe()} ...`);
+    electronEnsure = ensureElectronDownload()
+      .then((path) => {
+        if (path) {
+          launchHelper(path);
+        } else {
+          console.warn(
+            '[dsh-whale-girl] Electron download failed; desktop pet unavailable. Set DSH_WHALE_ELECTRON_PATH and restart, or retry later.',
+          );
+        }
+      })
+      .finally(() => {
+        electronEnsure = undefined;
+      });
+  };
+
+  /** ֹͣ���� Helper���������ã����ٴ����𣩡������˳�/���ж��·�����������˸ɾ����� stopAndWait���� */
+  const stopHelper = (reason = 'settings-change'): void => {
+    if (startRetryTimer) {
+      clearTimeout(startRetryTimer);
+      startRetryTimer = undefined;
+    }
+    helper?.stop(reason);
+    helper = undefined;
+  };
+
+  /** ֹͣ��**�Ⱦ� helper �����˳�**�����ñ��������"ͣ������"ר�ã�issue #64���� */
+  const stopHelperAndWait = async (reason: string): Promise<void> => {
+    if (startRetryTimer) {
+      clearTimeout(startRetryTimer);
+      startRetryTimer = undefined;
+    }
+    const old = helper;
+    helper = undefined;
+    await old?.stopAndWait(reason);
+  };
+
+  /**
+   * �������ã�display / size �ȣ�������ؽ���������**�Ⱦ� helper �˳�**�������µġ�
+   *
+   * ΪʲôҪ�ȣ�issue #64����Electron �յ� SIGTERM ��ش����첽�ģ����� ms �𣩣�"���� kill �� spawn
+   * �½���"���þɴ��ڣ��ɴ�С�����´��ڣ��´�С�����ݹ��桪���û������ľ���"�����Сð�����ڶ�ֻ����"��
+   * ΪʲôҪ���У���������ᴥ���������������������ͬ����ͬʱ�������� helper�������ö��д�������
+   * ��������������� rejected ״̬���������������Ҳ�������� helper��
+   */
+  let desktopSyncQueue: Promise<void> = Promise.resolve();
+  const syncDesktop = (): Promise<void> => {
+    desktopSyncQueue = desktopSyncQueue
+      .then(async () => {
+        refreshDesktop();
+        await stopHelperAndWait('desktop-config-change');
+        startHelper();
+      })
+      .catch((e: unknown) => {
+        ctx.logger?.warn?.(`[dsh-whale-girl] �������� Helper ʧ�ܣ�${e instanceof Error ? e.message : String(e)}`);
+      });
+    return desktopSyncQueue;
+  };
+
+  /** ��չ�� �� �ز���Ŀ¼����webm �� webm/��mov �� mov/���������ڶ���Ŀ¼ƽ�����У� */
+  const animSubdirFor = (ext: string): string => (ext === '.mov' ? 'mov' : 'webm');
+
+  /** ���ڶ����زĸ�������չ��ȡ��Ŀ¼��webm/ ���������mov/ ������ʱΪ 404 ���ף��� macOS ��ά������ */
+  const assetRootFor = (ext: string): string => join(PACKAGE_ROOT, 'assets', animSubdirFor(ext));
+
+  /** �û�������������չ��ȡ��Ŀ¼��main-animation/webm �� main-animation/mov���� */
+  const userRootFor = (ext: string): string => join(thumbUserRoot, animSubdirFor(ext));
+
+  /** ����ҵ��·��(WebServer ע�� �� HTTP ���� / ���� Helper �ܵ� �� scheme Ӧ��,����ͬһ��ʵ��):
+   *  ����ֻ�� rawUrl(/dsh-whale-girl/... + ��ѯ) + method + body �ı�;���� RouteResult(JSON/�ı�/�ļ�),
+   *  ���ѷ��������̡���ҵ���߼�ֻ��һ��,������Ȼһ��(Ӳ��Լ:�����/������Ϊ�ϸ����)�� */
+  const handlePetRoute = async (rawUrl: string, method: string, body?: string): Promise<RouteResult> => {
+    const url = new URL(rawUrl, 'http://localhost');
+    const rest = decodeURIComponent(url.pathname.slice(ROUTE_PREFIX.length + 1));
+
+    // �Լ죺/dsh-whale-girl/diag��GET��
+    //
+    // ΪʲôҪ�������š�ģ���ô����������ʱ���⿴����429���ֲ�����
+    // ������û���������õ�����Ĭ��ֵ�����ǡ�����������������Ѳ��**������**��������
+    // ���Űڳ�����һ�۾��ܶ�λ��ֻ�����������κ��ⲿ���á�
+    if (rest === 'diag') {
+      let defaultSelection: unknown;
+      try {
+        defaultSelection = ctx.agentDefaultModel.currentSelection();
+      } catch (e) {
+        defaultSelection = { error: e instanceof Error ? e.message : String(e) };
+      }
+      let speech: unknown;
+      try {
+        const stt = ctx.get?.('speechToText', false) ?? ctx.speechToText;
+        const snap = stt?.snapshot?.();
+        speech = snap === undefined ? 'unavailable' : { selection: snap.selection, providers: snap.providers?.map((p: { id: string }) => p.id) };
+      } catch (e) {
+        speech = { error: e instanceof Error ? e.message : String(e) };
+      }
+      let modelCatalog: unknown;
+      try {
+        const llm = ctx.llm as { listProviders?: () => unknown[] } | undefined;
+        modelCatalog = llm?.listProviders?.()?.map((p) => (p as { id: string }).id);
+      } catch (e) {
+        modelCatalog = { error: e instanceof Error ? e.message : String(e) };
+      }
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          plugin: 'dsh-whale-girl',
+          routePrefix: ROUTE_PREFIX,
+          // �ؼ����֣��۲쵽�ĻỰģ�� / DSH Ĭ��ģ�� / ���ս������
+          observedSessionModel: observedSessionModel ?? null,
+          defaultSelection,
+          resolvedModel: resolveCurrentModel() ?? null,
+          llmProviders: modelCatalog,
+          speech,
+          voice: readVoiceConfig(),
+        },
+      };
+    }
+
+    // ��Ʒ���ã�/dsh-whale-girl/config��GET ��ȡ�ϲ���Ʒ / PUT �����û��� / POST ͬ������Ĭ�ϣ�
+    if (rest === 'config') {
+      if (method === 'GET') {
+        // Ψһ������ڣ�readAllConfig ���ؾ�����ȷ�����Ʒ�ۺϣ�{ main:{...}, test1:{...} }����
+        // �����/����/����ҳֱ�����ѣ������κ�У��/����
+        try {
+          // ��̬���ñ���ɱ���棨�� /state ͬ�ھ��������Ѷ˻ᡸ�������ð汾�仯 �� ���� /config����
+          // ��һ�� GET �����л���ͻ��ûؾ����ã����׻���ֱ��ʧЧ��
+          return {
+            kind: 'json',
+            status: 200,
+            obj: readAllConfig(configPaths),
+            headers: { 'cache-control': 'no-cache, no-store' },
+          };
+        } catch (e) {
+          return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+      if (method === 'PUT') {
+        try {
+          const parsed = JSON.parse(body ?? '');
+          // ͸�����������ǰ�����ϵ��û��ļ�ԭ���󣬰ѷǰ����������ֶΣ�physics/whisperPrompt/
+          // chatMemoryRounds/...�����ظ� saveUserConfig��������ҳ���治��Ĩ���û��ָĵľ������á�
+          // **������ JSONC ���̽�����**��readUserConfig�����û�������ǡ�ͬ����д��Ĵ� // ע��
+          // �� config.jsonc ԭ�ģ����ϸ� JSON.parse ���������״�����̵� �� existing �� undefined
+          // �� �������ؽ� �� �û��ĸ߼��ֶ�ȫ������ bug �ĸ���·���������������Զ�ס����
+          const existing = readUserConfig(configPaths);
+          const clean = saveUserConfig(parsed, existing);
+          if (!clean) {
+            return {
+              kind: 'json',
+              status: 400,
+              obj: {
+                error:
+                  'invalid pet config: expected { pets:[{name?,id,size,balanceEnabled,display,position:{corner,marginX,marginY}}] }��display Ϊ web/desktop/both/none ֮һ����ѡ���� notificationsEnabled / whisperImageEnabled / chatImageEnabled ��������ѡ���ﲼ�� whisperEnabled / workStatusEnabled / fixedEnabled��',
+              },
+            };
+          }
+          // ��Ԥ�죺�û�����ڵ��� JSONC ���������ˣ����𻵣��� **�Ȳ�д��**��
+          // �����ǰ������ؽ���existing ���������͵��ڰ��ļ���ʣ�µ��������ݶ�������Ҿ�Ĭ����
+          // ���Ի� 409 ������ҳ������ȡ�� = �����ļ���ȷ�� = �� ?force=1 ǿ���ؽ�����
+          if (url.searchParams.get('force') !== '1' && userConfigUnparsable(configPaths)) {
+            return {
+              kind: 'json',
+              status: 409,
+              obj: { error: 'user config is unparsable', needConfirm: true, userFile: userConfigPath },
+            };
+          }
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(userConfigPath, JSON.stringify(clean, null, 2), 'utf8');
+          void syncDesktop(); // display/size �ȿ��ܱ仯���ؽ���������ﲢ���� Helper���첽��������������Ӧ��
+          // ��Ӧ�� = ������**��Ʒ�ۺ�**���� GET /config ͬһ�ݣ��ֶ�����������
+          // ����ҳ����ֱ�ӽ��������� flattenConfigPets ��ƽ��Ⱦ�����ͻ��˵���Ŀ���ֶ�
+          // ��������/Ȩ��/�������/����״̬�İ���ֻ����һ����䣬�����еڶ��ݲ���ʵ�֡�
+          return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+        } catch {
+          return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+        }
+      }
+      if (method === 'POST') {
+        // ͬ����������Ĭ�����ã�assets/config.jsonc ԭ�ģ���ע�ͣ�����д���û����á���
+        // ���ǡ��ָ�Ĭ�ϡ����ϲ���� = ����Ĭ�ϣ����ָ��û�����һ�ݿ�ֱ�ӱ༭���������ã�
+        // �������Լ��Ӱ��ڸ���һ�ݣ��� config.ts �� syncUserConfigFromDefault����
+        try {
+          syncUserConfigFromDefault(configPaths);
+        } catch (e) {
+          // Ĭ���ļ�ȱʧ / �û�Ŀ¼����д����ʽ 500��������Ĭ���°�������ļ�
+          return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+        }
+        void syncDesktop(); // ���ñ��ˣ��ؽ���������ﲢ���� Helper���첽����������Ӧ��
+        return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    // ��ֻ�������ʾλ�ã�������Ҽ����ر�������ʾ���� POST /pet-display����
+    // ��Ƶ��������ֻ�� id + display ������������Ҫ����÷��ش����� pets������ PUT /config ����̬��
+    // �ͻ�������-��-д����������ͬ���������Ҳ�ò�׼��д��һ�㣩��
+    // ������ɷ���˷��飺id �ںϲ��� mergePet ��֤**ȫ��Ψһ**���ظ�ʵ���ᱻ�����������ۺϣ���
+    // ���� findPetInstance �Ľ��û�����壻�������ÿͻ��˴� entry ֻ����"��������ʵ�������"��
+    // ��ʧ���棨��ƽ�װ� entry ��¶��ƴ�ļ�·�������룩��
+    // д�������� PUT /config ��ȫһ�£�saveUserConfig �������ؽ� + existing ͸�������û��ָĵ�
+    // whisperPrompt / memes �ȷǰ������ֶβ����Ĩ����� ./config ���Ƕ��� bug ��ע�ͣ���
+    if (rest === 'pet-display') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let payload: { id?: unknown; display?: unknown };
+      try {
+        payload = JSON.parse(body ?? '') as { id?: unknown; display?: unknown };
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const petId = typeof payload.id === 'string' ? payload.id.trim() : '';
+      const nextDisplay = String(payload.display ?? '');
+      if (!petId) return { kind: 'json', status: 400, obj: { error: 'missing pet id' } };
+      if (!PET_DISPLAY_SET.has(nextDisplay)) {
+        return { kind: 'json', status: 400, obj: { error: `invalid display: ${nextDisplay}` } };
+      }
+      let merged: Record<string, Record<string, unknown>>;
+      try {
+        merged = readAllConfig(configPaths);
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+      // ���в��������ֿ��ܣ�id ���������ڣ����ʵ���ںϲ�ʱ**�� id ��������Ŀ�ظ�������**�����ǲ���
+      // �ۺ�������ֶ�ֻ�ܻ� 404����������ƾ id ȥ����"Ӧ��"�����ĸ��ļ���
+      const hit = findPetInstance(merged, petId);
+      if (!hit) return { kind: 'json', status: 404, obj: { error: `pet not found: ${petId}` } };
+      // Ŀ��㣺main �� �û������ã����� �� �ļ������Լ������ã�.json �� .jsonc����λͳһ�� ./config��
+      let layerPath: string;
+      let layerDir: string;
+      let existing: Record<string, unknown> | undefined;
+      if (hit.entry === 'main') {
+        layerPath = userConfigPath;
+        layerDir = userRoot;
+        existing = readUserConfig(configPaths);
+      } else {
+        const file = readPetConfigEntry(configPaths, hit.entry);
+        if (!file) {
+          return { kind: 'json', status: 404, obj: { error: `pet config file not found: ${hit.entry}` } };
+        }
+        layerPath = file.path;
+        layerDir = petConfigDir;
+        existing = file.raw;
+      }
+      // �����滻���壺saveUserConfig �ؽ��������� pets ���飬�������**�ò�ȫ��**���ֻ��Ŀ��
+      // ��ֻ�� display �����©���� = �����Ǵ�������ɾ�����
+      const layerPets = Array.isArray(hit.conf.pets) ? (hit.conf.pets as Record<string, unknown>[]) : [];
+      const pets = layerPets.map((p) => (String(p.id) === petId ? { ...p, display: nextDisplay } : p));
+      const clean = saveUserConfig({ pets }, existing);
+      if (!clean) return { kind: 'json', status: 400, obj: { error: 'invalid pet config' } };
+      try {
+        await mkdir(layerDir, { recursive: true });
+        await writeFile(layerPath, JSON.stringify(clean, null, 2), 'utf8');
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+      // �� await�������ߺܿ��ܾ���**������������ػ����**���� Helper���� /reload ͬһ��������
+      // д���Ѿ��䶨������������Ҫ�ظ����÷���
+      void syncDesktop();
+      // ��Ӧ�� = �Ķ����**��Ʒ�ۺ�**���� PUT / POST /config ͬ�Σ������÷�����������Ҽ��˵���
+      // ֱ�Ӱ������� petBridge.reload�������ٷ�һ�� GET /config ���� ������ҳ�����ߵ���ͬһ��·��
+      // Ҳ�Ͳ����õ����ܳ¾ɵ����ã��ֳ����֣������ؾۺ�ʱ�������Ҫˢ�²���Ч����
+      return { kind: 'json', status: 200, obj: readAllConfig(configPaths) };
+    }
+
+    // ����ˡ��������á����Ҽ��˵� �� POST /reload������������ Helper��ȫ��������ﴰ�ڰ����������ؽ���
+    // �뱣����**ͬһ��**����·����syncDesktop�����ж��� + �Ⱦɽ��������˳������µģ���
+    // ���Գ������� / display / size �ı仯ͬ����Ч������Ⱦ�˾͵����������������⼸��
+    // ��ÿֻ����һ�����ڣ����������ʱ�� DSH_WHALE_PETS ���ģ���
+    // ע�⣺�����߾���**������������Ǹ� helper**������Ӧ����֤�ʹ��˲� await ��������̻� 200��
+    if (rest === 'reload') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      void syncDesktop();
+      return { kind: 'json', status: 200, obj: { reloading: true } };
+    }
+
+    // �����ļ�·�� + �洢λ���嵥������ҳ���߼����á��롸ж����洢��չʾ�ã�
+    if (rest === 'config/meta') {
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          user: userConfigPath,
+          default: join(PACKAGE_ROOT, 'assets', 'config.jsonc'),
+          animations: thumbUserRoot,
+          memes: memesUserRoot,
+          // ȫ������λ�ã������û����� / Electron ����ʱ / ����˻��� / ���ػ��� / ������壩��
+          // ǰ����ֱ�Ӵ���ʵд�뷽��·��������������ƴĿ¼��
+          storage: storageEntries({
+            userDataRoot: userRoot,
+            electronDir: electronLandingDir(),
+            home: homedir(),
+            packageRoot: PACKAGE_ROOT,
+          }),
+          // profile ����ƴж������ dsh plugin --profile <��> remove dsh-whale-girl�����Ʋ���ʱΪ�մ���
+          profile: profileNameFrom(PACKAGE_ROOT) ?? '',
+        },
+      };
+    }
+
+    // ��ѡģ���嵥������ҳ��AI ģ�͡����������������Դ������ DSH �Լ���ģ��ѡ����**ͬԴ**����
+    // ���������� llm ����listProviders = ��ע���ʵʱ������·�ɣ�listModels(provider) = ��·���µ�ģ�͡�
+    // ֻ�����޸����ã�ĳ����������ģ��ʧ�ܣ���������֧�� / ���磩ֻ�������ţ����Ͽ������嵥��
+    // ������·��һ����ûע��ʱ���䵽 listConfigurableProviders�����������������õ�·�ɣ���
+    // �����������š�������·�ɵ���ʧ�ܻ������ɲ�Ļ��䶵ס��
+    if (rest === 'models') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const llm = ctx.llm as
+          | {
+              listProviders?: () => Array<{ id?: unknown; name?: unknown }>;
+              listConfigurableProviders?: () => Array<{ provider?: unknown; displayName?: unknown }>;
+              listModels?: (provider: string) => Promise<Array<{ id?: unknown; name?: unknown }>>;
+            }
+          | undefined;
+        const named = (id: unknown, name: unknown): { id: string; name: string } => {
+          const pid = String(id ?? '');
+          return { id: pid, name: String(name ?? '') || pid };
+        };
+        let providers = (typeof llm?.listProviders === 'function' ? llm.listProviders() : []).map((p) =>
+          named(p?.id, p?.name),
+        );
+        if (providers.length === 0 && typeof llm?.listConfigurableProviders === 'function') {
+          providers = llm.listConfigurableProviders().map((p) => named(p?.provider, p?.displayName));
+        }
+        providers = providers.filter((p) => p.id);
+        const catalog = await Promise.all(
+          providers.map(async (p) => {
+            let models: Array<{ id: string; name: string }> = [];
+            try {
+              const list = await llm?.listModels?.(p.id);
+              models = (Array.isArray(list) ? list : []).map((m) => named(m?.id, m?.name)).filter((m) => m.id);
+            } catch {
+              /* �����������в���ģ�ͣ���ռ��ɣ���������÷�����ֻ�С����浱ǰ�Ի�����ѡ�� */
+            }
+            return { ...p, models };
+          }),
+        );
+        return { kind: 'json', status: 200, obj: { providers: catalog } };
+      } catch (e) {
+        return { kind: 'json', status: 500, obj: { error: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    // ��ѯͳһ״̬��S����/dsh-whale-girl/state��GET��no-cache������ǰ�� 1s ��ѯ��**Ψһ**����Դ
+    // ����� / ����״̬ / ֪ͨ / ����˵������״�� ./state����
+    // ֻ�������ڴ桢**�㸱����**�����������ﴥ���ⲿ���û�ģ�����ɡ����ǻ�������˵� 1s ��ѯ������
+    if (rest === 'state') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      return {
+        kind: 'json',
+        status: 200,
+        // ˳���·����ð汾��������˿������֡����ñ��𴦸Ĺ�����������Ҽ��� display / ��һ����ǩҳ
+        // ���� / �û��ָ������ļ��������� /config��û����������˵ĸĶ�Ҫˢ��ҳ��ſɼ���
+        obj: { ...state.read(), configVersion: configVersion(configPaths) },
+        headers: { 'cache-control': 'no-cache, no-store' },
+      };
+    }
+
+    // ��/dsh-whale-girl/balance��POST = ����ˢ��һ�β�д�� S������ {ok}��
+    // �����˵㣬**�������������**��������ֻ��һ�����ڣ�/state��������ֻ����"����ˢ��"��
+    // ����ǰ������ GET��ֱ�Ӳ���+ /balance/trigger��1s ������ѯ�������˵㣬����ɾ����
+    // ǰ�˲��ٸ��Զ�ʱ����host ��ʱ��ͳһ�飬���˹���һ�ݣ���Ҳ������Ҫ������ѯ��ת��
+    if (rest === 'balance') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      await refreshBalance(true); // manual���û�����Ҫ�ģ�������ʱǰ�˱ص�����˵��
+      // ok ֻ��ʾ"���ˢ�¶��������"�������Ƿ������ S �� data �ok:false �ᵯ����˵�����ݣ�
+      return { kind: 'json', status: 200, obj: { ok: true } };
+    }
+
+    // �����/dsh-whale-girl/whisper?pet=<id>��POST = ������������˵һ�䣬���� {ok}��
+    // �����˵㣬**�������ı�**�����ı��� S �� pets.<id>.say��������/��������/�Ի��ظ�ͬһ��Ҷ�ӣ���
+    // �ֶ����岻�� whisperEnabled �ſأ��Ǹ��ֶ�ֻ���Զ����ڣ������ǰһ�£���
+    if (rest === 'whisper') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const petId = String(url.searchParams.get('pet') ?? '');
+      try {
+        const ok = await publishWhisper(petId);
+        return { kind: 'json', status: 200, obj: ok ? { ok: true } : { ok: false, reason: 'generate-error' } };
+      } catch (e) {
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // ������Ͷι��/dsh-whale-girl/broadcast?pet=<id>��POST = ��һ��**�ⲿ������**�ı�д���������ݣ�
+    // �� /whisper ���������**������**�����÷��Լ����ı��������������������Ů��Ѳ��ȣ�
+    // ��˵�Լ��Ļ�ʱ����������ͳ��������˸��"ʵ��"���� issue #76����
+    // д�� S �� pets.<id>.say ���� ��������/�Ի��ظ�**ͬһ��Ҷ��**������ 1s ���Զ���ʾ��ǰ����Ķ���
+    // �����˵㣬ֻ�� {ok}���ı������ /state ����
+    // У�飨��ͨ��һ�� HTTP 200 + ok:false���� /chat ��ʧ�ܿھ�һ�£���
+    //   text ���trim ��ǿգ�**���賤�����ƣ�Ҳ����Ƶ**��������Ƶ���ɵ��÷��Լ����𣩣�
+    //   pet ȱʡ = ��ǰ���裨resolveActivePetId��������ʵ���ڣ�
+    //   image ֻ��**���ڱ������**���������м�����淶�������ž�������ע���ⲿ��ַ��
+    if (rest === 'broadcast') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(body ?? 'null');
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const o = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+      // ���ı�����Ҫ�����þ����ж����ȶ�·����Ϊһ����Ȼʧ�ܵ�����ȥ������
+      if (!normalizeBroadcastText(o.text)) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: 'text Ϊ��' } };
+      }
+      try {
+        const cfg = readAllConfig(configPaths);
+        const d = decideBroadcast({
+          cfg,
+          requested: String(url.searchParams.get('pet') ?? ''),
+          active: resolveActivePetId(),
+          text: o.text,
+          image: o.image,
+          memeDirs: memeDirsFor,
+        });
+        if (!d.ok) return { kind: 'json', status: 200, obj: { ok: false, reason: d.reason, message: d.message } };
+        state.writePet(d.petId, 'say', d.image ? { text: d.text, image: d.image } : { text: d.text });
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        // ���ö�ȡʧ�ܵȣ���װ�𻵣��� ��ʽʧ�ܣ�����Ĭ
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // �㲥������/dsh-whale-girl/anim?pet=<id>��POST = �����貥һ��ָ��������
+    // Ч�����Ҽ��˵��㡸��������**��ȫһ��**�������˶�����ͬһ���˵������������
+    // ������� handleMenuAction / ���� sprite.onMenuAction��������ֻ����������͵���
+    // д�� S �� pets.<id>.anim ���� ǰ�� 1s �ڷ��� counter �仯��Դ���ţ�**���ּ��ļ���**����
+    // �����˵㣬ֻ�� {ok}��
+    // У�飨��ͨ��һ�� HTTP 200 + ok:false�������������˵�ھ�һ�£���
+    //   name ���trim ��ǿգ��ұ����ڸó��� animations �����ܵ㵽�ļ�����
+    //   �����Ŷ˶Բ����ڵĶ���û�ж��ף����ּ��ļ��� �� 404 �� ����ʧ�� �� ����Ϊ"����û��Ӧ"��
+    //    ���Ա�����������ס��������д�� S ��ǰ�˰���һ�ˣ���
+    //   pet ȱʡ = ��ǰ���裨resolveActivePetId��������ʵ���ڡ�
+    if (rest === 'anim') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(body ?? 'null');
+      } catch {
+        return { kind: 'json', status: 400, obj: { error: 'invalid JSON body' } };
+      }
+      const o = parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
+      try {
+        const cfg = readAllConfig(configPaths);
+        const d = decideAnim({
+          cfg,
+          requested: String(url.searchParams.get('pet') ?? ''),
+          active: resolveActivePetId(),
+          name: o.name,
+        });
+        if (!d.ok) return { kind: 'json', status: 200, obj: { ok: false, reason: d.reason, message: d.message } };
+        state.writePet(d.petId, 'anim', { name: d.name });
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        // ���ö�ȡʧ�ܵȣ���װ�𻵣��� ��ʽʧ�ܣ�����Ĭ
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // �Ի���/dsh-whale-girl/chat?pet=<id>
+    //   GET  ���� ������䴰�ڣ���β chatMemoryRounds �֣���������ʱչʾ��һ���Զ���������ѯ��
+    //   POST ���� Я����ʷ���ɻظ���д����䣻**ֻ�� {ok}**���ظ��� S �� pets.<id>.say
+    // ����Ψһ��д�� = host��memory.json�������/�������˶�ֻ�ǿͻ��ˣ���
+    // ͬһʵ�����������������Ȼ����ͬһ�ݼ��䣻�ļ�ȫ�治ɾ��
+    // ����ֻ��β�� chatMemoryRounds �֣�1 �� = 1 �� 1 �𣻺ϲ����Ѱ���Ŀ��Ĭ�ϣ���
+    if (rest === 'chat') {
+      const petId = String(url.searchParams.get('pet') ?? '');
+      try {
+        if (method === 'GET') {
+          const cfg = readAllConfig(configPaths);
+          const mem = await readMemory();
+          const bucket = mem[findPetInstance(cfg, petId)?.entry ?? petId] ?? {};
+          const list = (bucket[petId]?.messages ?? []).slice();
+          const rounds = memoryRounds(petId, cfg);
+          // �� chatWithPet ͬһ���壺rounds = 0 �� ����ʷ��slice(-0) �᷵���������飬���ϣ�
+          const messages = sliceMemoryRounds(list, rounds);
+          return { kind: 'json', status: 200, obj: { ok: true, messages, rounds } };
+        }
+        if (method === 'POST') {
+          const parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+          const text = typeof parsed.text === 'string' ? parsed.text.trim() : '';
+          if (!text) {
+            return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: '��ϢΪ��' } };
+          }
+          if (text.length > 2000) {
+            return {
+              kind: 'json',
+              status: 200,
+              obj: { ok: false, reason: 'bad-request', message: '��Ϣ�������� 2000 �֣�' },
+            };
+          }
+          const result = await chatWithPet(petId, text);
+          return { kind: 'json', status: 200, obj: result };
+        }
+        return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      } catch (e) {
+        // �������� readAllConfig ��֤��ȷ�������� config-error ��֧�������ࣨIO/LLM���� generate-error
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: false, reason: 'generate-error', message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    }
+
+    // ���� �������׷�٣�ֻ������ʱ�ã�������������������������������������������������������������������������
+    // POST /dsh-whale-girl/voice/trace  {step, detail}
+    // ׷��һ�� JSONL �� $DSH_HOME/dsh-whale-girl/voice-trace.log��
+    //
+    // Ϊʲô��Ҫ��������·��**ǰ��**�кܶಽ�����豸��¼��������������ϳɡ����ţ���
+    // �κ�һ����Ĭʧ�ܶ�����Ϊ������û��Ӧ���������������̨���˲����㿴��
+    // ����ļ���������һ�� GET ���ܿ����ߵ���һ���ϵġ�
+    // GET  /dsh-whale-girl/voice/trace  �� ��� 60 �У��������ã�
+    if (rest === 'voice/trace') {
+      const file = join(userRoot, 'voice-trace.log');
+      if (method === 'GET') {
+        let lines: string[] = [];
+        try {
+          lines = readFileSync(file, 'utf8').split('\n').filter((l) => l !== '').slice(-60);
+        } catch {
+          /* û����־ = ��û�ܹ� */
+        }
+        return { kind: 'json', status: 200, obj: { ok: true, lines } };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const line = JSON.stringify({
+          at: new Date().toISOString(),
+          step: String(parsed.step ?? ''),
+          detail: parsed.detail === undefined ? undefined : parsed.detail,
+        });
+        await mkdir(userRoot, { recursive: true });
+        await appendFile(file, line + '\n', 'utf8');
+        return { kind: 'json', status: 200, obj: { ok: true } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    // ���� ���򣨿���Ļ �� ��һ�� �� ���֣�������������������������������������������������������������������������
+    //   GET  /autoplay/config      �� ���� + ��ͣ״̬
+    //   POST /autoplay/config      �� �������ã��������ؽ���
+    //   POST /autoplay/run         �� ��һ�֣�����ʱֻ��ӡ�ƻ���
+    //   POST /autoplay/resume      �� �ֶ��ָ���ͣ
+    //   POST /autoplay/stop        �� �ֶ���ͣ
+    //   GET  /autoplay/foreground  �� ��ǰǰ̨���ڱ��⣨�������������
+    if (rest.startsWith('autoplay/')) {
+      const sub = rest.slice('autoplay/'.length);
+
+      if (sub === 'config') {
+        if (method === 'GET') {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: true, config: readAutoplayConfig(), estop: autoplayEstop.snapshot() },
+          };
+        }
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          const current = readAutoplayConfig();
+          const next: AutoplayConfig = normalizeAutoplayConfig({
+            enabled: typeof patch.enabled === 'boolean' ? patch.enabled : current.enabled,
+            dryRun: typeof patch.dryRun === 'boolean' ? patch.dryRun : current.dryRun,
+            estopKey: typeof patch.estopKey === 'string' ? patch.estopKey : current.estopKey,
+            windowTitles: Array.isArray(patch.windowTitles)
+              ? (patch.windowTitles as unknown[]).filter((v): v is string => typeof v === 'string')
+              : current.windowTitles,
+          });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          // ���˼�ͣ����Ҫ���������ؽ�������
+          await rearmAutoplay(next);
+          if (!next.enabled && autoplaySession !== undefined) await endAutoplaySession();
+          return { kind: 'json', status: 200, obj: { ok: true, config: next, estop: autoplayEstop.snapshot() } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+      if (sub === 'run') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        const conf = readAutoplayConfig();
+        if (!conf.enabled) {
+          return { kind: 'json', status: 200, obj: { kind: 'skipped', reason: 'disabled' } };
+        }
+        return { kind: 'json', status: 200, obj: await runAutoplayOnce(conf) };
+      }
+
+      if (sub === 'resume') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        autoplayEstop.resume();
+        return { kind: 'json', status: 200, obj: { ok: true, estop: autoplayEstop.snapshot() } };
+      }
+
+      if (sub === 'stop') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        autoplayEstop.stop('manual');
+        return { kind: 'json', status: 200, obj: { ok: true, estop: autoplayEstop.snapshot() } };
+      }
+
+      if (sub === 'foreground') {
+        if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        try {
+          return { kind: 'json', status: 200, obj: { ok: true, title: await foregroundWindowTitle() } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+      // ���� ����ִ�У�������֤��ڣ���������������������������������������������������������������������������������
+      //   POST /autoplay/task { text, cwd? }
+      //   �� �����񱾵�ִ�У����������� DSH �½��Ựִ��
+      //
+      // ���·����**��֤��**����ȷ�Ͻ��Ự��Ŀ��У�����������·��ӡ�
+      if (sub === 'task') {
+        if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+        try {
+          const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+          const text = typeof patch.text === 'string' ? patch.text.trim() : '';
+          const routed = routeTask(text);
+          if (routed.kind === 'self') {
+            return { kind: 'json', status: 200, obj: { ok: true, route: 'self', action: routed.action, reason: routed.reason } };
+          }
+          if (routed.kind === 'chat') {
+            return { kind: 'json', status: 200, obj: { ok: true, route: 'chat', reason: routed.reason } };
+          }
+          const sel = resolveCurrentModel();
+          const created = await createTaskSession(
+            ctx.get('agents', false) as Parameters<typeof createTaskSession>[0],
+            routed.prompt,
+            {
+              ...(typeof patch.cwd === 'string' && patch.cwd !== '' ? { cwd: patch.cwd } : {}),
+              ...(sel === undefined ? {} : { provider: sel.provider, model: sel.model }),
+            },
+          );
+          return { kind: 'json', status: 200, obj: { ...created, route: 'session', reason: routed.reason } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+
+      return { kind: 'json', status: 404, obj: { error: 'unknown autoplay route' } };
+
+
+    // ��ݿ��أ��Ҽ��˵�ֱ�ӷ�ת������ʶ���������û�����ҳ
+    if (rest === 'sight/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readSightConfig();
+      const next = { ...current, enabled: !current.enabled };
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      armSightTimer(); // ���̰���״̬���Ŷ�ʱ��
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+
+    // ���� ��Ϸ���� + ���ֻỰ ������������������������������������������������������������������������������������
+    //   GET  /autoplay/games   �� ȫ������
+    //   POST /autoplay/games   �� ����һ�ݣ�title/genre/keys/notes��
+    //   POST /autoplay/guide   �� �����鹥�Բ�д������
+    //   GET  /autoplay/session �� ���ֽ���
+    //   POST /autoplay/end     �� �������֣�ѹ�������ü��䣩
+    if (rest === 'autoplay/games') {
+      if (method === 'GET') {
+        return {
+          kind: 'json',
+          status: 200,
+          obj: { ok: true, games: await readGames(), genreCaps: GENRE_MEMORY_CAP },
+        };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const profile = normalizeProfile(patch as Partial<GameProfile>);
+        await writeGame(profile);
+        return { kind: 'json', status: 200, obj: { ok: true, game: profile } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    if (rest === 'autoplay/guide') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const title = typeof patch.title === 'string' ? patch.title.trim() : '';
+        const result = await searchGuide(ctx.get('web', false) as Parameters<typeof searchGuide>[0], title);
+        if (!result.ok) return { kind: 'json', status: 200, obj: result };
+        // д��ͬ��������û�о��½�һ�ݣ�
+        const games = await readGames();
+        const existing = games.find((g) => g.title === title || g.id === profileIdFromTitle(title));
+        const merged = normalizeProfile({
+          ...(existing ?? { title, genre: 'custom' }),
+          title,
+          guide: { query: result.query, summary: result.summary, sources: result.sources, atMs: result.atMs },
+        });
+        await writeGame(merged);
+        return { kind: 'json', status: 200, obj: { ok: true, guide: result, game: merged } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    }
+
+    if (rest === 'autoplay/session') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          session:
+            autoplaySession === undefined
+              ? null
+              : {
+                  gameTitle: autoplaySession.gameTitle,
+                  steps: autoplaySession.steps.length,
+                  cap: autoplaySession.cap,
+                  startedAt: autoplaySession.startedAt,
+                },
+        },
+      };
+    }
+
+    if (rest === 'autoplay/end') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const ended = await endAutoplaySession();
+      return { kind: 'json', status: 200, obj: { ok: true, ended: ended ?? null } };
+    }
+
+    // ��ݿ��أ���ת��������򡹣��Ҽ��˵��ã�
+    if (rest === 'autoplay/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readAutoplayConfig();
+      const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: !current.enabled });
+      // �ص���� =���������֡����ѻỰѹ�������ü��䣬Ȼ����ջ���
+      if (!next.enabled) void endAutoplaySession();
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      await rearmAutoplay(next); // ���ر���Ҫ��ͣ��ͣ����
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+    }
+
+    // ���� ����ʶ��������Ļ�������������������������������������������������������������������������������������������
+    //   GET  /sight/config   �� ��ǰ���� + ����ռ��
+    //   POST /sight/config   �� �������ã��������ؽ���
+    //   POST /sight/run      �� ���̿�һ�Σ��ֶ����������ȶ�ʱ����
+    //   GET  /sight/snapshot/<file> �� ȡһ�ſ��գ�������ҳ�˶ԡ�������ʲô����
+    if (rest === 'sight/config') {
+      if (method === 'GET') {
+        const usage = await snapshotUsage(sightSnapshotsRoot);
+        const conf = readSightConfig();
+        // ��**ʵ�ʻ��õ�ʶͼģ��**һ�𷵻أ�����ҳҪ��ʾ��������˭��ʶ�𡹡�
+        // ��������ֻ����������Ի�ģ�͡��ĸ��֣���֪�������䵽�ļң�Ҳ��û���ж��յ���˭��Ǯ����
+        const resolvedVision = resolveVisionModel();
+        return {
+          kind: 'json',
+          status: 200,
+          obj: {
+            ok: true,
+            config: conf,
+            snapshots: usage,
+            dir: sightSnapshotsRoot,
+            visionModelResolved: resolvedVision ?? null,
+          },
+        };
+      }
+      if (method === 'POST') {
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          // �������ؽ���ֻ������֪�ֶΣ����Ͳ��Ծ��õ�ǰֵ
+          const current = readSightConfig();
+          const next: SightConfig = normalizeSightConfig({
+            enabled: typeof patch.enabled === 'boolean' ? patch.enabled : current.enabled,
+            intervalSec: Number(patch.intervalSec ?? current.intervalSec),
+            keepSnapshots: Number(patch.keepSnapshots ?? current.keepSnapshots),
+            changeThreshold: Number(patch.changeThreshold ?? current.changeThreshold),
+            speak: typeof patch.speak === 'boolean' ? patch.speak : current.speak,
+            mode: typeof patch.mode === 'string' ? (patch.mode as SightMode) : current.mode,
+            windowTitle: typeof patch.windowTitle === 'string' ? patch.windowTitle : current.windowTitle,
+          });
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(sightConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+          // ���ø����������Ŷ�ʱ�������õ���һ�������
+          armSightTimer();
+          return { kind: 'json', status: 200, obj: { ok: true, config: next } };
+        } catch (e) {
+          return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+        }
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    if (rest === 'sight/run') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const round = await runSightOnce();
+      return { kind: 'json', status: 200, obj: round };
+    }
+
+
+    // GET /sight/snapshot/<file> �� ȡһ�ſ��գ�����ҳ�˶ԡ�������ʲô����
+    if (rest.startsWith('sight/snapshot/')) {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const name = rest.slice('sight/snapshot/'.length);
+      // ֻ�� .jpg �Ҳ����·���ָ��������Ŀ¼��Խ
+      if (!name.endsWith('.jpg') || name.includes('/') || name.includes('\\')) {
+        return { kind: 'json', status: 400, obj: { error: 'bad snapshot name' } };
+      }
+      try {
+        const buf = await readFile(join(sightSnapshotsRoot, name));
+        return { kind: 'file', status: 200, contentType: 'image/jpeg', body: buf };
+      } catch {
+        return { kind: 'json', status: 404, obj: { error: 'snapshot not found' } };
+      }
+    }
+    // ���� Ӧ�ñ������ɲ��ġ�������������������������������������������������������������������������������������
+    //   GET  /apps/aliases �� ��ǰ��Ч��������
+    //   POST /apps/aliases �� �����û���������ñ�ϲ���
+    if (rest === 'apps/aliases') {
+      if (method === 'GET') {
+        return { kind: 'json', status: 200, obj: { ok: true, aliases: readAppAliases(), defaults: DEFAULT_APP_ALIASES } };
+      }
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      try {
+        const patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        const next: Record<string, string> = {};
+        for (const [k, v] of Object.entries(patch)) {
+          if (typeof v === 'string' && k.trim() !== '' && v.trim() !== '') next[k.trim()] = v.trim();
+        }
+        await mkdir(userRoot, { recursive: true });
+        await writeFile(appsPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+        return { kind: 'json', status: 200, obj: { ok: true, aliases: readAppAliases() } };
+      } catch (e) {
+        return { kind: 'json', status: 200, obj: { ok: false, message: e instanceof Error ? e.message : String(e) } };
+      }
+    // ��ݿ��أ���ת���������
+    if (rest === 'autoplay/toggle') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const current = readAutoplayConfig();
+      const next: AutoplayConfig = normalizeAutoplayConfig({ ...current, enabled: !current.enabled });
+      // �ص���� =���������֡����ѻỰѹ�������ü��䣬Ȼ����ջ���
+      if (!next.enabled) void endAutoplaySession();
+      await mkdir(userRoot, { recursive: true });
+      await writeFile(autoplayConfigPath, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      await rearmAutoplay(next); // ���ر���Ҫ��ͣ��ͣ����
+      return { kind: 'json', status: 200, obj: { ok: true, enabled: next.enabled } };
+    }
+
+    if (rest === 'sight/snapshots') {
+      // �����嵥������ҳ����ͼ�ã���ֻ���ļ�������������
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let files: string[] = [];
+      try {
+        files = (await readdir(sightSnapshotsRoot)).filter((n) => n.endsWith('.jpg')).sort();
+      } catch {
+        /* Ŀ¼�������� �� ���嵥 */
+      }
+      return { kind: 'json', status: 200, obj: { ok: true, files } };
+    }
+
+    if (rest.startsWith('sight/snapshot/')) {
+      // ֻ����ȡ����Ŀ¼����ļ������ֱ����� .jpg �Ҳ����ָ��������Խ��
+      const name = rest.slice('sight/snapshot/'.length);
+      if (name === '' || name.includes('/') || name.includes('\\') || !name.endsWith('.jpg')) {
+        return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid snapshot name' };
+      }
+      const file = join(sightSnapshotsRoot, name);
+      if (!existsSync(file)) return { kind: 'text', status: 404, body: 'dsh-whale-girl: snapshot not found' };
+      return { kind: 'file', file, contentType: 'image/jpeg' };
+    }
+
+    // ���� �������ã���д voice.json����������������������������������������������������������������������������������
+    // Ϊʲô������ config.jsonc���Ƿ��������ϸ�����ֶ�У���롸�����滻�����壬
+    // ������������������������·������ɫ����ݼ��������ȥ���á����÷Ƿ� �� ���ﲻ��ʾ��
+    // ǣ��������ֳ������ļ�������Ӱ�졣
+    if (rest === 'voice/config') {
+      if (method === 'GET') {
+        return { kind: 'json', status: 200, obj: { ok: true, ...readVoiceConfig() } };
+      }
+      if (method === 'POST') {
+        let patch: Record<string, unknown>;
+        try {
+          patch = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+        } catch {
+          return { kind: 'json', status: 400, obj: { ok: false, message: 'invalid JSON body' } };
+        }
+        try {
+          // ֻ������֪�ֶΣ���ֻ���ܷǿ��ַ��� ���� �������ؽ������������д���û�Ŀ¼
+          const current = readVoiceConfig();
+          const next: Record<string, string> = { voice: current.voice, rate: current.rate };
+          if (current.pythonPath !== undefined) next.pythonPath = current.pythonPath;
+          if (current.language !== undefined) next.language = current.language;
+          if (current.shortcut !== undefined) next.shortcut = current.shortcut;
+          if (current.micDeviceId !== undefined) next.micDeviceId = current.micDeviceId;
+          if (current.hideButton !== undefined) next.hideButton = current.hideButton;
+          for (const key of ['voice', 'rate', 'pythonPath', 'language', 'shortcut', 'micDeviceId', 'hideButton'] as const) {
+            const value = patch[key];
+            if (typeof value === 'string' && value.trim() !== '') next[key] = value.trim();
+            else if (value === '') delete next[key];
+          }
+          // �� promises �棨���ļ������ѵ��� mkdir/writeFile����ͬ����û�е��룬
+          // ֮ǰ����д�� mkdirSync��һ����ͱ� "mkdirSync is not defined"��
+          await mkdir(userRoot, { recursive: true });
+          await writeFile(join(userRoot, 'voice.json'), JSON.stringify(next, null, 2) + '\n', 'utf8');
+          return { kind: 'json', status: 200, obj: { ok: true, ...readVoiceConfig() } };
+        } catch (e) {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: false, message: e instanceof Error ? e.message : String(e) },
+          };
+        }
+      }
+      return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+    }
+
+    // ���� ���� ����������������������������������������������������������������������������������������������������������������������������
+    // �����˵㣬����Ϊ����ǰ���ܰ�����ϡ�����ÿһ��ʧ��ʱ������ͬ���˻���
+    //   POST /voice/asr   {audio:<base64 wav>}         �� {ok,text}      ʶ��
+    //   POST /voice/turn  {audio:<base64 wav>, pet?}   �� {ok,userText,reply}  ʶ�� + ���ɻظ��������䣩
+    //   POST /voice/tts   {text, voice?, rate?}        �� audio/mpeg     �ϳ�
+    //
+    // Ϊʲô /turn ��ֱ������Ƶ���ظ��ı�Ҫ������������/��Ļ����������󲥣�
+    // ����������һ����Ӧ����ǰ���ڡ��ı��ѵ�����Ƶû����ʱ�޷�������ʾ��
+    //
+    // Ϊʲô TTS �����˵㣺ͬһ��ظ�����Ҫ�ز������ϳɡ��롸�Ի��������
+    // �ز���������һ�� LLM��
+    if (rest === 'voice/asr' || rest === 'voice/turn' || rest === 'voice/tts') {
+      if (method !== 'POST') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = (JSON.parse(body ?? 'null') as Record<string, unknown> | null) ?? {};
+      } catch {
+        return { kind: 'json', status: 400, obj: { ok: false, reason: 'bad-request', message: 'invalid JSON body' } };
+      }
+
+      // ��ɫ/����/�������������� voice.json �︲�ǣ���ȱʡһ���������İ��ֵ
+      const voiceCfg = readVoiceConfig();
+
+      if (rest === 'voice/tts') {
+        const text = typeof parsed.text === 'string' ? parsed.text : '';
+        const tts = await synthesize(userRoot, text, {
+          voice: typeof parsed.voice === 'string' ? parsed.voice : voiceCfg.voice,
+          rate: typeof parsed.rate === 'string' ? parsed.rate : voiceCfg.rate,
+          pythonPath: voiceCfg.pythonPath,
+        });
+        if (!tts.ok) {
+          return { kind: 'json', status: 200, obj: { ok: false, reason: tts.reason, message: tts.message } };
+        }
+        // ���洰�� bridge ȡ��Ƶ��bridge �� JSON ��Э�飬�����˶����ƣ�
+        // �����ṩ base64 ��̬��`?encoding=base64`������Ⱦ���Լ���� Blob ���š�
+        // �����������Ĭ�ϵĶ�������Ӧ����ʡ�ڴ棩��
+        if (url.searchParams.get('encoding') === 'base64') {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: true, mime: tts.mime, audio: Buffer.from(tts.audio).toString('base64') },
+          };
+        }
+        return { kind: 'buffer', status: 200, body: tts.audio, contentType: tts.mime };
+      }
+
+      // asr / turn ��Ҫ������Ƶ
+      const audio = typeof parsed.audio === 'string' ? decodeAudioBase64(parsed.audio) : undefined;
+      if (audio === undefined) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'bad-request', message: 'ȱ�ٻ��޷����� audio' } };
+      }
+      const asr = await transcribe(ctx, audio, { language: voiceCfg.language });
+      if (!asr.ok) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: asr.reason, message: asr.message } };
+      }
+      if (rest === 'voice/asr') {
+        return { kind: 'json', status: 200, obj: { ok: true, text: asr.text, audioSeconds: asr.audioSeconds } };
+      }
+
+      // turn��ʶ����ֱ������ /chat ��ȫ��ͬ����������·����ͬһ������/����/���䵽��ǰģ�ͣ�
+      const requested = String(parsed.pet ?? '');
+      const petId = requested.trim() === '' ? resolveActivePetId() : requested;
+      if (!petId) {
+        return { kind: 'json', status: 200, obj: { ok: false, reason: 'no-pet', message: 'û�пɶԻ��ĳ���' } };
+      }
+      // ���� ����ָ��ϳ�����ֱ��ִ�У�����ģ�� ����
+      //
+      // ����Ҫ���ǡ������ܲٿ�һ�С������ء��������֡���Ӧ�á��Լ��顣
+      // ��Щȷ���������߱��ع��򣨺��뼶��0 �ɱ�����ֻ���ϲ�����ʱ�ŵ����ġ�
+
+      // ���� ������Ϣ��ȷ�ϣ�������ȼ�������
+      //
+      // ����˵��"��"����İ���ȥ��˵"����"�Ͷ����
+      // ������ǰ�棺��������̫���׳����ڱ�ľ���������ȴ�����
+      if (pendingMessage !== undefined) {
+        if (isConfirm(asr.text)) {
+          const done = await executePendingMessage();
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'send' } };
+        }
+        if (isCancel(asr.text)) {
+          pendingMessage = undefined;
+          const done = '�ã������ˡ�';
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'send' } };
+        }
+      }
+
+      const intent = parseVoiceIntent(asr.text);
+      if (intent !== undefined) {
+        const done = await runVoiceIntent(intent, petId);
+        if (done !== undefined) {
+          state.writePet(petId, 'say', { text: done });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, intent: intent.kind } };
+        }
+      }
+      // ���� �������������������Щ����ָ��Ϳ��ǲ���"�����Ļ�"����
+      //
+      // ��һ����**�����**������ֻ�� parseVoiceIntent������/��Ӧ��/�ѣ���
+      // �񡸴�΢�Ÿ�ĳ�˷���Ϣ������DSH���½���Ŀ����ת�̡����������ͨ���졪��
+      // ��ģ��˼�������һ�仰����ʲô��û���������"��Ӧ��ȴûִ��"�ĸ���
+      if (intent === undefined) {
+        const routed = routeTask(asr.text);
+        if (routed.kind === 'self') {
+          const done = await runSelfAction(routed.action);
+          if (done !== undefined) {
+            // д���ݣ���������ֱ�� return��ֻ�� reply �������÷��������
+            // ����Ҷ��ûд�������������õ���˵����ȴ�������֡�
+            state.writePet(petId, 'say', { text: done });
+            return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply: done, audioSeconds: asr.audioSeconds, route: 'self' } };
+          }
+        } else if (routed.kind === 'session') {
+          // ֻ������ȷ˵�ˡ��½���Ŀ/�½��Ự/��DSH�����Ž��Ự
+          // ���ࣨchat������ȥ�������Ի������������ͻ�����
+          const sel = resolveCurrentModel();
+          const created = await createTaskSession(
+            ctx.get('agents', false) as Parameters<typeof createTaskSession>[0],
+            routed.prompt,
+            sel === undefined ? {} : { provider: sel.provider, model: sel.model },
+          );
+          const reply = created.ok
+            ? `�ã����� DSH ���˸��Ựȥ����${created.title}`
+            : `û�ܿ��Ự��${created.message}`;
+          state.writePet(petId, 'say', { text: reply });
+          return { kind: 'json', status: 200, obj: { ok: true, userText: asr.text, reply, audioSeconds: asr.audioSeconds, route: 'session' } };
+        }
+      }
+
+      // ���� ����Ի���ġ�����ʶ��������
+
+      // ���� ����Ի���ġ�����ʶ��������
+      //
+      // ����ԭ���������ڸ�����ֻ�����Ӧ���Լ�ȥ��һ���ٴ𣬶�����Ϲ�¡�
+      // ��ÿ�䶼��̫�����԰� sight.json �ĵ�λ�жϣ�
+      //   off   �Ӳ������� / auto ���йؼ��ʲſ� / always ÿ�ֶ���
+      // ֡��Ҳ�ɵ���1 = ��ʡ��3~5 = �ܿ�������仯����
+      //
+      // ���Ľ����д���䣨ֻ��һ���������ģ���ʡ�ðѽ�ͼ���������Ի���ʷ��
+      const sightConf = readSightConfig();
+      let preSight: { note: string; images: Uint8Array[] } | undefined;
+      if (shouldLookAtScreen(asr.text, sightConf.voiceVision)) {
+        try {
+          const plan = framePlan(sightConf.voiceFrames, sightConf.voiceFrameGapMs);
+          const frames = await captureFrames(plan.count, plan.gapMs);
+          preSight = {
+            note: frameCaption(plan.count, plan.gapMs),
+            images: frames.map((f) => Uint8Array.from(Buffer.from(f.dataUrl.split(',')[1] ?? '', 'base64'))),
+          };
+          console.log(`[dsh-whale-girl] ����Ի�����ʶ����${plan.count} ֡����λ ${sightConf.voiceVision}��`);
+        } catch (e) {
+          // ��һ��ʧ�ܲ���Ӱ��Ի������������Ȼ����ֻ�����ֻش�
+          console.warn('[dsh-whale-girl] ����ʶ��ʧ�ܣ������ı�������' + (e instanceof Error ? e.message : String(e)));
+        }
+      }
+
+      // ���������Ѿ��³��� chatWithPet ��������������ͬһ����������ֻ����ѽ��ת��ȥ��
+      // ����Ի���**��**�����洰����÷��Լ��ϳɲ��ţ�������ͬһ�䲥����
+      const final = await chatWithPet(petId, asr.text, undefined, false, preSight);
+
+      if (!final.ok) return { kind: 'json', status: 200, obj: final };
+      return {
+        kind: 'json',
+        status: 200,
+        obj: {
+          ok: true,
+          userText: asr.text,
+          reply: final.text ?? '',
+          audioSeconds: asr.audioSeconds,
+          ...(final.fellBackTo === undefined ? {} : { fellBackTo: final.fellBackTo }),
+        },
+      };
+    }
+
+    // �����ļ���/dsh-whale-girl/thumb/<�زĸ�>/<file>����չ�� webm��Ĭ�ϣ�/ mov��macOS ���ƣ���
+    // �زĹ�������Ƿ���ڸó���Ķ����ز�Ŀ¼ `pet/<petId>-animation/`���ж���
+    //   - ���ڣ�pet pack �����ֻ���Լ���Ŀ¼���鲻���� 404 ��ʽ���������������
+    //   - �����ڣ�**���������ó���**��main ���û���ӵ������ֻ�������ز���
+    //     main-animation/<webm|mov> ���� �� ���� assets/<webm|mov>������������޹أ���ֻ���ã�
+    // mov��HEVC-with-Alpha��Ϊ macOS Safari/WKWebView ���Ƹ�ʽ��Ĭ�ϲ����������
+    // �û��� GitHub Release��assets-mov�����غ�� main-animation/mov/�����ѿͻ��˲���
+    // ��չ��������src/shared/constants.ts �� ANIMATION_EXT / ���� lib/client.js����Ϊ .mov��
+    // ע�⣺font / pic �Ǳ�ƽ�� /<scope>/<file>��ֻ�� thumb �� /<scope>/<petId>/<file>����
+    // �����Ȳ� scope���ٰ� scope ���Բ�ʣ��Σ����� font/pic ������ petId �̵��ļ��Ρ�
+    const [scope, ...restParts] = rest.split('/');
+    if (scope === 'font') {
+      const fontRoot = join(PACKAGE_ROOT, 'assets', 'fonts');
+      const fontFile = resolveExisting(fontRoot, restParts.join('/'));
+      if (fontFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: font not found' };
+      const ext = fontFile.slice(fontFile.lastIndexOf('.')).toLowerCase();
+      return { kind: 'file', file: fontFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+    }
+
+    // ֪ͨͼ�꣺/dsh-whale-girl/pic/<file> �� ���� assets/pic������ png��ϵͳ֪ͨ icon �ã�
+    // �������/dsh-whale-girl/pic/memes/<�زĸ�>/<����>.png �� ���زĸ��� memeDirsFor ��Ŀ¼��
+    // �������ռĿ¼ �� �û�Ŀ¼ �� ���ڣ����� /thumb ͬһ���زĹ������壻���ƺ����ģ�URL �������Ϸ����롣
+    // �ɵ�������ʽ /pic/memes/<����>.png ������ȼ����زĸ� main ��Ŀ¼����δ�����Ŀͻ����ճ�ȡ������ͼ����
+    if (scope === 'pic') {
+      if (restParts[0] === 'memes') {
+        const segs = restParts.slice(1);
+        // ���� �� 2 = <�زĸ�>/<���ơ�>��ǡ�� 1 �� = �ɱ�ƽ��ʽ����������Ƽ��ļ�����������Ŀ¼����
+        // ����������ʽ�����壻�زĸ��� /thumb �� petId ͬ��أ����ָ�� / �����ַ�����ʽ 400��
+        const scoped = segs.length >= 2;
+        const assetRoot = scoped ? segs[0] : 'main';
+        if (scoped && (assetRoot.length > 64 || ID_FORBIDDEN.test(assetRoot))) {
+          return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid asset root' };
+        }
+        const rel = (scoped ? segs.slice(1) : segs).join('/');
+        let picFile: string | undefined;
+        for (const dir of memeDirsFor(assetRoot)) {
+          picFile = resolveExisting(dir, rel);
+          if (picFile !== undefined) break;
+        }
+        if (picFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: pic not found' };
+        const ext = picFile.slice(picFile.lastIndexOf('.')).toLowerCase();
+        return { kind: 'file', file: picFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+      }
+      const picRoot = join(PACKAGE_ROOT, 'assets', 'pic');
+      const picFile = resolveExisting(picRoot, restParts.join('/'));
+      if (picFile === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: pic not found' };
+      const ext = picFile.slice(picFile.lastIndexOf('.')).toLowerCase();
+      return { kind: 'file', file: picFile, contentType: MIME[ext] ?? 'application/octet-stream' };
+    }
+
+    if (scope !== 'thumb') {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: expected /dsh-whale-girl/thumb/<petId>/<file>' };
+    }
+    // thumb ������ʽ��/<scope>/<petId>/<file>�����������ٲ���� id ���ļ���
+    const [petId, ...nameParts] = restParts;
+    if (!petId || nameParts.length === 0) {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: expected /dsh-whale-girl/thumb/<petId>/<file>' };
+    }
+    // petId ��**��ʶ��**��= pet/<��>-animation/ �� <��>����Դ�� pet/ �µ��ļ���ǰ׺��������·��Ƭ�Σ�
+    // ���ָ��/�����ַ�����ʽ 400�������κ�·��ƴ���ж����Ϸ����������ģ��ճ�����
+    // �÷Ƿ��ַ�������� ASCII ���������Ƿ����벻�پ�Ĭ���䵽���زĳأ�����������"û�ж����ز�"�����֣���
+    // Ҳ������� resolveAsset ֮������һ���ṹ�Է��ߡ�
+    if (ID_FORBIDDEN.test(petId)) {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: invalid pet id' };
+    }
+    const fileName = nameParts.join('/');
+    const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.webm' && ext !== '.mov') {
+      return { kind: 'text', status: 400, body: 'dsh-whale-girl: unsupported animation format (expected .webm or .mov)' };
+    }
+    // �زĹ�������Ƿ���ڸó���Ķ����ز�Ŀ¼�ж���������Ĭ���ã���
+    //   - ���� `pet/<petId>-animation/`��pet pack ���URL �� = �زĸ� assetRoot����
+    //     ֻ���Լ���Ŀ¼���鲻���� 404 ��ʽ������������������ز�
+    //   - �����ڣ�**���������ó���**��main ���û���ӵ������ֻ������ȫ�ֶ����أ���
+    //     ���ز��������û� main-animation/<ext ��Ŀ¼> ���ȣ���ΰ��� assets/<ext ��Ŀ¼>
+    // extraAnimDir �����ȹ� resolveAsset��petId �ǽ����� URL �Σ�Windows �� %5C �����
+    // ��б�ܲ��ᱻ rest.split('/') �п���ֱ�� join ���� `..\..\x` �ӳ��û������̡�
+    const extraAnimDir = resolveAsset(petConfigDir, petId + '-animation');
+    const file =
+      extraAnimDir !== undefined && existsSync(extraAnimDir)
+        ? resolveExisting(extraAnimDir, fileName)
+        : (resolveExisting(userRootFor(ext), fileName) ?? resolveExisting(assetRootFor(ext), fileName));
+    if (file === undefined) return { kind: 'text', status: 404, body: 'dsh-whale-girl: asset not found' };
+    return { kind: 'file', file, contentType: MIME[ext] ?? 'application/octet-stream' };
+  };
+
+  ctx.effect(
+    () =>
+      ctx.webServer.register({
+        kind: 'prefix',
+        path: ROUTE_PREFIX,
+        handler: async (req: IncomingMessage, res: ServerResponse) => {
+          try {
+            const body = req.method === 'PUT' || req.method === 'POST' ? await readBody(req) : undefined;
+            const result = await handlePetRoute(req.url ?? '/', req.method ?? 'GET', body);
+            if (result.kind === 'json') sendJson(res, result.status, result.obj, result.headers);
+            else if (result.kind === 'text') sendText(res, result.status, result.body);
+            else if (result.kind === 'buffer') sendBuffer(res, result.status, result.body, result.contentType);
+            else sendFile(res, result.file, result.contentType); // �� async������ open ���Լ� pipe�������ڲ��տ�
+          } catch (e) {
+            sendJson(res, 500, { error: e instanceof Error ? e.message : String(e) });
+          }
+        },
+      }),
+    'dsh-whale-girl: /dsh-whale-girl asset route',
+  );
+
+  // ���� worker ���������ڣ����ж��/HMR ����ʱɱ���פ�� Python ���̣�
+  // ����ÿ�����ض������һ���¶����̣�������ռ�Źܵ����˳�����
+  ctx.effect(() => () => disposeVoiceWorkers(), 'dsh-whale-girl: voice workers');
+
+  // ����ʶ���������������ʱ�������ж��ʱ����������غ����������ʱ��
+  // ��������ʱ�� = ÿ�ֽ���������˵���黰�����Ҷ��ỨǮ����
+  ctx.effect(() => {
+    armSightTimer();
+    return () => {
+      if (sightTimer !== null) {
+        clearTimeout(sightTimer);
+        sightTimer = null;
+      }
+    };
+  }, 'dsh-whale-girl: sight timer');
+
+  // ���򣺰����������ͣ���������ж��ʱ**����**ͣ���Ǹ���פ��ѯ���̣�
+  // ����ÿ����һ�ξͶ���һ�� PowerShell �ں�̨��ת��������һֱ�ڶ�����״̬����
+  ctx.effect(() => {
+    void rearmAutoplay(readAutoplayConfig());
+    return () => {
+      stopEstopWatcher?.();
+      stopEstopWatcher = undefined;
+      // ж��ʱ��������Ϊ��ֹͣ������ֹ�������ڼ�����һ�����ж���״̬
+      autoplayEstop.stop('manual');
+    };
+  }, 'dsh-whale-girl: autoplay estop');
+
+  // ����״̬���������� DSH �Ự�¼� �� �ۺ�"��ǰ�״̬"��WorkStatusStore �� չʾ���գ���
+  // ���ѵ��¼���turn/start��user/message��goal �������ж�����tool/call��update_goal ��β�ж�����
+  // tool/result��approval/asked��turn/end��todo/write��ֻ�������������İ������е�λ����
+  // ������������ģ�ͣ��г������� workStatusEnabled ʱ�ű�����������ѣ�host ���������������
+  ctx.effect(() => {
+    const dispose = ctx.on('session/event', (session: unknown, event: unknown) => {
+      const type = (event as { type?: string } | null)?.type;
+      if (!type) return;
+      const sessionId = String(
+        (session as { id?: unknown; header?: { id?: unknown } } | null)?.header?.id ??
+          (session as { id?: unknown } | null)?.id ??
+          'unknown',
+      );
+      if (type === 'todo/write') {
+        // ���������İ���ֻд**�ûỰ**����Ŀ��state/task ͬԴ��������ȫ���ֶΣ�Ҳ�Ͳ����ܴ��Ự����
+        // �Ựû�л��Ŀ���ѿ���/��������� �����������ᱻչʾ��д��ȥֻ���Ϊһ��"�����İ�"��
+        // �嵥������ in_progress/pending ʱ currentTaskFromTodo ���� null�����ڰѾ��İ�����
+        // ���ݻ��䵽��λ�İ���issue #59 ȱ�� 3����λ�İ����ñ�һ����ʷ��¼�������Σ���
+        if (workStatus.has(sessionId)) {
+          workStatus.setTask(
+            sessionId,
+            currentTaskFromTodo(event as { data?: { todos?: Array<{ status?: string; content?: string }> } }),
+          );
+          publishWorkStatus(); // �����İ��仯ҲҪд S���������ݿ������£�
+        }
+        return;
+      }
+      if (type === 'user/message') {
+        // Ŀ���������ж����Զ��ֵ���Ϣ�� source.kind==='goal'��round>0�����������Զ����ܣ�
+        // �� turn/end completed ֻ��"�������"�����������������
+        const source = (event as { data?: { source?: { kind?: string } } })?.data?.source;
+        if (source?.kind === 'goal') {
+          const flags = turnFlags.get(sessionId) ?? { goalRound: false, closing: null };
+          flags.goalRound = true;
+          turnFlags.set(sessionId, flags);
+        }
+        return; // user/message ��������λ����
+      }
+      if (type === 'turn/start') {
+        turnFlags.set(sessionId, { goalRound: false, closing: null }); // ��һ�֣��� turn ����־
+        // ��һ��Ҳ��ʼ�µ����������ģ������һ�����µ����������İ���issue #59������������һֱ���š�
+        // ���ۣ�goal ���������������ÿ�ֿ�ͷ�����һ˲��λ�İ���ֱ�����֣�ͨ���ڿ�ͷ�����ڣ�
+        // ��дһ�� todo �嵥��
+        workStatus.setTask(sessionId, null);
+        publishWorkStatus(); // �����һ�������İ�ҲҪд S
+      }
+      if (
+        type === 'tool/call' &&
+        String((event as { data?: { name?: unknown } })?.data?.name ?? '') === GOAL_UPDATE_TOOL
+      ) {
+        // update_goal complete/blocked = �����Ǹ�Ŀ�����β�֣��� completed ���������
+        const action = goalUpdateAction(String((event as { data?: { arguments?: unknown } })?.data?.arguments ?? ''));
+        if (action) {
+          const flags = turnFlags.get(sessionId) ?? { goalRound: false, closing: null };
+          flags.closing = action;
+          turnFlags.set(sessionId, flags);
+        }
+      }
+      const next = reduceWorkStatus(
+        event as { type?: string; data?: Record<string, unknown> & { reason?: { kind?: string } } },
+        turnFlags.get(sessionId),
+      );
+      if (!next) {
+        // turn/end �� null��aborted / δ֪ kind�����ûỰ�غ��ѽ��������Ự״̬����չʾ�ص����л�
+        // �䵽������Ծ�Ự����ֹ�غϱ���Ϻ����ÿ�����һ���������¼��� null ��"������"�����ԡ�
+        if (type === 'turn/end') {
+          turnFlags.delete(sessionId);
+          cancelTerminalCleanup(sessionId); // ��Ŀ��Ҫ���ˣ�����һ����������¿����Ķ�ʱ��
+          workStatus.clear(sessionId); // ��Ŀ��ͬ���������İ�һ����ʧ��clear �ڲ�������չʾ��
+          publishWorkStatus(); // �غϱ���� �� �ص����У�ǰ�˾ݴ�����פ����
+        }
+        return;
+      }
+      const seq = Number((event as { seq?: unknown }).seq ?? 0);
+      // ͬ�Ựͬ״̬���ظ����£���ˢ��������ͬ״̬�Ÿ�д������չʾ
+      if (!workStatus.setState(sessionId, next, seq)) return;
+      publishWorkStatus(); // ��λ���� �� д S��ǰ�˾ݴ��ж��� + ���ݣ�
+      // ��ֻ̬չʾ���ݴ��ں��Զ�������¾����̬���ٸ�������Bug 3 ��һ����˳������ Bug 2 �������
+      // �ص�����̬��ȡ���Ǵδ�ִ�е������������������ʱ�Ự�ѷ���̬���Ȳ���Ҳ�����ţ�
+      // ��Ŀ����ͬ�������İ��������������ˡ�
+      if (next === 'success' || next === 'error') scheduleTerminalCleanup(sessionId);
+      else cancelTerminalCleanup(sessionId);
+    });
+    return () => {
+      dispose();
+      for (const t of terminalTimers.values()) clearTimeout(t);
+      terminalTimers.clear();
+    };
+  }, 'dsh-whale-girl: work-status session events');
+
+  // ϵͳ֪ͨ������ DSH �����¼� �� ����֪ͨ֡��ӣ��������ѯ /state ������ toast����
+  // �� work-status ͬһ session/event Դ����ְ����Զ�����֪ͨ֡ = �¼� �� toast ��һ��һӳ�䣬
+  // ����״̬�ۺϣ���֡��Լ�� shared/notify.ts ��ȫһ�£��������ӳ����Ķ���
+  //   �¼�Դ��turn/end�����/ʧ��/�ضϣ���approval/asked��Ȩ�����룩��
+  //          tool/call��ask_user_question���û�ѡ�񣩡�agent/error���޻غ�λ��ʧ�ܣ�0.1.5 ��������
+  //   �����ţ��Ự�� #82��shouldNotifySession���Ӵ���/ί�ɲ�����+ ��� #114��ֻ�����Ի���ɡ���
+  //          �ӳ�ȷ�������Ựȷʵû�����ٵ������Ϸ� scheduleCompletionNotify����
+  // ������������ģ�ͣ�֪ͨ���������ҳ������������ģʽ�����ѱ����У���Ӱ���κγ�����Ϊ����
+  ctx.effect(() => {
+    const sessionDispose = ctx.on(
+      'session/event',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (session: any, event: any) => {
+        // �Ự�ţ�issue #82�����Ӵ��� / ί�ɻỰ����֪ͨ������ȵ��Ǹ��Ի�������ĳһ·�Ӵ������ꡣ
+        // �о��� header.origin������ parentSession���ǻ����ͨ fork �����Ի�һ�������
+        // �оݲ�����ʱ���У�������֪ͨ������ơ���� notify-events.ts �� shouldNotifySession��
+        if (!shouldNotifySession(session)) return;
+        // ��ţ�issue #114�������Ի���ɡ��ӳ�ȷ�������Ựȷʵû�����ٵ������ŶӻỰ�� Lead ��
+        // ��һ�ֽ��� �� �Ŷ��չ�����Ա������ʱ�����Ի���ɡ����󱨡�����ʧ��/����ضϡ�Ȩ�����롢
+        // �û�ѡ�񲻹�����ţ�ֱ�ӷ��У����ɼ� notify-events.ts �� isCompletionTurnEnd����
+        if (isCompletionTurnEnd(event)) {
+          scheduleCompletionNotify(sessionIdOf(session), event);
+          return;
+        }
+        const frame = reduceNotifyFrame(event as Parameters<typeof reduceNotifyFrame>[0]);
+        if (frame) pushNotifyFrame(frame);
+      },
+    );
+    // agent/error��agent-loop dispatch.emit�����޻غ�λ�õ�����ʧ�ܣ�0.1.5 ������
+    // �ɰ��޴��¼� = ��һ��֪ͨ��turn/end error ��֧�Ѹ��Ǵ󲿷�ʧ�ܳ��������������
+    // **�����Ŷ��ܲ�����**���غ�ֻ�� { turn, step, error }�������Ự��ʶ���޴��ж���Դ��
+    const errorDispose = ctx.on(
+      'agent/error',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload: any) => {
+        pushNotifyFrame(agentErrorFrame(payload?.error));
+      },
+    );
+    return () => {
+      // ж��ʱ������Ķ�ʱ������������ж�أ����㻹ȥдһ�� S
+      for (const t of notifyActivityTimers.values()) clearTimeout(t);
+      notifyActivityTimers.clear();
+      sessionDispose();
+      errorDispose();
+    };
+  }, 'dsh-whale-girl: notify frames');
+
+  // /whale-balance б���������һ�����ˢ�£�д S �� ǰ�� 1s ��ѯ���������ݣ���
+  // fire-and-forget����ִ�����ⲿ API����ѯ����Ҫ���룩�����̻أ����һ�ɴ� S ��
+  // ���ɹ�����λ���� + ������ݣ������̲�֧�� / ȱƾ֤ / ץȡʧ��������˵�����ݣ�������Ĭ����
+  //
+  // ������һ�ɴ� `whale-` ǰ׺��commands ��**ȫ�������ռ�**��ͬ��ע���ֱ����
+  // `command "balance" is already registered` ����������� activation ʧ��
+  // ������ dsh-pet �õ������� balance/pet/chat�������������ʱ��Ȼײ������
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-balance',
+        description: '�ֶ����������������ʾ����������������ݣ�',
+        handler: () => {
+          void refreshBalance(true); // manual���������û������õ�
+          return { kind: 'success', text: '�Ѵ��������������ʾ' };
+        },
+      }),
+    'dsh-whale-girl: /whale-balance command',
+  );
+
+  // �������ˢ�£�host ��Ψһ��ʱ����ǰ�˲������κ���ʱ������
+  // ����**ÿ�����¶�����** eventsRefreshSec.balance �� ����������һ����Ȼ���ϡ�
+  // û���κ��������ĳ���ʱ������ѯ���������ã����׻��ⲿ API ���á�
+  ctx.effect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    function arm(sec: number): void {
+      if (disposed) return;
+      timer = setTimeout(() => void tick(), Math.max(1000, sec * 1000));
+    }
+    async function tick(): Promise<void> {
+      let sec: number;
+      try {
+        const cfg = readAllConfig(configPaths);
+        sec = balancePeriodSec(cfg);
+        // û���κ��������ĳ��� �� ���飨ʡ�ⲿ���ã������ø�����һ����Ȼ����
+        if (flattenPetList(cfg).some((p) => p.balanceEnabled === true)) await refreshBalance();
+      } catch {
+        // �������״� = ��װ�𻵣�readAllConfig ֻ��**����Ĭ��**ȱʧ/��ʱ�ף��û���д��ֻ��澯���ˣ���
+        // �������š���ÿ 30 ��������һ��û�����壬���һ��ռһ����פ��ʱ�����޺ð�װ������ DSH ���ɡ�
+        return;
+      }
+      arm(sec);
+    }
+    void tick(); // �������һ�Σ������ǰ�ͻ���"����һ���ٶ�ʱ"һ�£�
+    return () => {
+      disposed = true;
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, 'dsh-whale-girl: balance poll');
+
+  // ���������ڣ�host ����ȣ�ǰ�˲������κ������ʱ������
+  // һ�� = ��һ������ + ��"����"�ĳ��������һ�䣻��һ�İ�**�������**�ţ���������ֻ��һ��
+  // ����ֵ�����������Ǹ�ֵ������"��һ������ + �����ȶ� lastWhisperAt"������ÿ��һ����ʱ����
+  // ������������ɾ����������Ŀ�ģ��̶�����Ȼ���ϣ�����ά��һ�Ѷ�ʱ�����������ڡ�
+  ctx.effect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    function arm(sec: number): void {
+      if (disposed) return;
+      timer = setTimeout(() => void tick(), Math.max(1000, sec * 1000));
+    }
+    function tick(): void {
+      let next = 300;
+      try {
+        const cfg = readAllConfig(configPaths);
+        const now = Date.now();
+        let min = Infinity;
+        for (const pet of flattenPetList(cfg)) {
+          const petId = String(pet.id ?? '');
+          if (!petId || pet.whisperEnabled !== true) continue;
+          const sec = whisperPeriodSec(cfg, petId);
+          min = Math.min(min, sec);
+          if (now - (lastWhisperAt.get(petId) ?? 0) < sec * 1000) continue;
+          lastWhisperAt.set(petId, now);
+          // �� await������Ҫ���룬��ѵ�������ס��ÿֻ����������ɣ�����������
+          void publishWhisper(petId).catch(() => {});
+        }
+        if (Number.isFinite(min)) next = min;
+      } catch {
+        // �������״� = ��װ�𻵣�ͬ��ʱ�������������ţ����ռ��פ���
+        return;
+      }
+      arm(next);
+    }
+    void tick(); // ���������һ�Σ������ǰ�ͻ�������������һ�£�
+    return () => {
+      disposed = true;
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, 'dsh-whale-girl: whisper poll');
+
+  // /pet б�����ѡ�񡸵�ǰ���衹��/chat �Ի���Ŀ�꣩������������� commandUi װ�ε�ѡ���
+  // ������ /pet �س���˵���ѡʱ������ѡ�к��ύ /pet <id> ��ͬһ handler������������� id ������
+  // ��name ���ظ���Ψһ���в��ϣ����������г���ѡ id����
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-pet',
+        description: 'ѡ�����/whale-chat �Ի���Ŀ�ꣻ֧��ѡ�������� id/���֣�',
+        input: { hint: '[���� id ������]����ղ鿴��ǰ��' },
+        handler: ({ rawInput }: { rawInput: string }) => {
+          const arg = rawInput.trim();
+          let eff: Record<string, unknown>[];
+          try {
+            eff = effectivePetList();
+          } catch {
+            eff = [];
+          }
+          if (!arg) {
+            const cur = resolveActivePetId();
+            const found = eff.find((p) => String(p.id) === cur);
+            return {
+              kind: 'success',
+              text: '��ǰ���裺' + (found ? petDisplayName(found) : cur || '���޿ɽ������裩'),
+            };
+          }
+          const byId = eff.find((p) => String(p.id) === arg);
+          if (byId) {
+            activePetId = String(byId.id);
+            return { kind: 'success', text: '��ѡ�����裺' + petDisplayName(byId) };
+          }
+          const byName = eff.filter((p) => petDisplayName(p) === arg);
+          if (byName.length === 1) {
+            activePetId = String(byName[0].id);
+            return { kind: 'success', text: '��ѡ�����裺' + petDisplayName(byName[0]) };
+          }
+          if (byName.length > 1) {
+            return {
+              kind: 'error',
+              text:
+                '��' +
+                arg +
+                '���� ' +
+                byName.length +
+                ' ֻ���裨id��' +
+                byName.map((p) => String(p.id)).join('��') +
+                '�������� id ָ��',
+            };
+          }
+          return { kind: 'error', text: '�Ҳ������衸' + arg + '����id �����ֶ��У�/pet �س��ɴ�ѡ���' };
+        },
+      }),
+    'dsh-whale-girl: /pet command',
+  );
+
+  // /chat б������뵱ǰ����Ի����޲��� = ������һ�䣨�ֶ����壺���� whisperEnabled �ſأ�
+  // �Ǹ��ֶ�ֻ���Զ����ڣ����в��� = �����Ի����� chatWithPet ͬһ��·�������� + ���� + д�̣���
+  // ������֧���� **fire-and-forget**����ִ����ģ�ͣ�����Ҫ���룩���ı�һ��д�� S ��
+  // pets.<id>.say��ǰ�� 1s ��ѯ /state �����ݡ����� /balance ����ͬһ�����壨��ִ�������ݣ���
+  ctx.effect(
+    () =>
+      ctx.commands.register({
+        name: 'whale-chat',
+        description: '�뾨����Ի������ = ������һ�䣻������Ϣ = �����Ի�',
+        input: { hint: '[��Ϣ]����� = �����' },
+        handler: ({ rawInput }: { rawInput: string }) => {
+          const petId = resolveActivePetId();
+          if (!petId) return { kind: 'error', text: 'û�пɽ���������' };
+          const text = rawInput.trim();
+          if (!text) {
+            void publishWhisper(petId).catch((e: unknown) =>
+              console.warn('[dsh-whale-girl] �������쳣��' + (e instanceof Error ? e.message : String(e))),
+            );
+            return { kind: 'success', text: '��������������һ��' };
+          }
+          if (text.length > 2000) return { kind: 'error', text: '��Ϣ�������� 2000 �֣�' };
+          void chatWithPet(petId, text).then((r) => {
+            if (!r.ok) {
+              console.warn('[dsh-whale-girl] �Ի�ʧ�� reason=' + r.reason + (r.message ? ' ' + r.message : ''));
+            }
+          });
+          return { kind: 'success', text: '�ѷ��ͣ��������ϻ�Ӧ' };
+        },
+      }),
+    'dsh-whale-girl: /chat command',
+  );
+
+  // ϵͳ֪ͨ���������������Ϸ�ע�ᣨnotify frames effect����host ���� session/event +
+  // agent/error ����֪ͨ֡��ӣ��������ѯ /notify ��ȡ�� toast��DSH 0.1.5 ɾ�����������
+  // api.events.mux/host �¼�����֪ͨ�����һ������ host ͨ����������Ϊһ�£���
+
+  // ��������������������� Helper ���գ��첽������ɺ�������
+  ctx.effect(() => () => {
+    disposed = true;
+    stopHelper('dsh-host-stop');
+  });
+
+  // ·�ɾ������������� Helper��Electron ȱʧʱ���澯����Ӱ�� DSH ������� overlay��
+  startHelper();
+}
