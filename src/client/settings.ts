@@ -282,7 +282,18 @@ export const zh = {
   physicsTitle: '物理（拖拽抛掷手感）',
   voiceTitle: '语音对话',
   voiceHint:
-    '识别用本机 SenseVoice（离线免费），合成用 edge-tts。这里改完点「保存语音设置」**立即生效**——语音配置单独存在 voice.json，不参与下面的「保存」。',
+    '识别用本机 SenseVoice（离线免费），合成可选 edge-tts 或本地 GPT-SoVITS 角色音色。这里改完点「保存语音设置」**立即生效**——语音配置单独存在 voice.json，不参与下面的「保存」。',
+  voiceProviderLabel: '语音合成方式',
+  voiceProviderEdge: 'edge-tts（微软音色，联网）',
+  voiceProviderGsv: 'GPT-SoVITS（本地角色音色）',
+  voiceProviderHint: '本地网关负责切换权重与情感参考音；网关没起来时会自动回退 edge-tts',
+  voiceProviderHintEdge: '微软在线合成，音色是 zh-CN-xxx 这类名字；稳定、无需本地服务',
+  voiceRoleLabel: '角色与情感',
+  voiceRolePlaceholder: '（未选择，跟随网关默认）',
+  voiceStyleAuto: '（自动）',
+  voiceRoleRefresh: '刷新列表',
+  voiceRoleHint:
+    '角色与情感都来自本地网关；不同角色支持的情感不同（例如虎克没有「中立」）。点「刷新列表」可在启动网关后重新读取',
   voiceShortcutLabel: '按住说话的快捷键',
   voiceShortcutHint:
     '形如 Alt+V / Ctrl+Shift+Space / F8。按住说话、松开结束；播放中按下可打断。宿主会注册**系统级**热键：DSH 窗口在后台、最小化或被其他应用挡住时也能用（需要 DSH 主程序在运行，仅 Windows）。',
@@ -669,7 +680,19 @@ export const en = {
   physicsTitle: 'Physics (drag & throw feel)',
   voiceTitle: 'Voice chat',
   voiceHint:
-    'Recognition uses the on-device SenseVoice model (offline, free); speech uses edge-tts. Changes here take effect immediately via "Save voice settings" — voice config lives in voice.json and is not part of the main Save below.',
+    'Recognition uses the on-device SenseVoice model (offline, free); speech can use edge-tts or local GPT-SoVITS character voices. Changes here take effect immediately via "Save voice settings" — voice config lives in voice.json and is not part of the main Save below.',
+  voiceProviderLabel: 'Speech synthesis',
+  voiceProviderEdge: 'edge-tts (Microsoft voices, online)',
+  voiceProviderGsv: 'GPT-SoVITS (local character voices)',
+  voiceProviderHint:
+    'The local gateway switches weights and picks the emotion reference audio; falls back to edge-tts automatically when it is not running',
+  voiceProviderHintEdge: 'Online Microsoft synthesis; voices are named like zh-CN-xxx; stable, no local service needed',
+  voiceRoleLabel: 'Character & emotion',
+  voiceRolePlaceholder: '(none — follow gateway default)',
+  voiceStyleAuto: '(auto)',
+  voiceRoleRefresh: 'Refresh list',
+  voiceRoleHint:
+    'Characters and emotions come from the local gateway; each character supports a different set (e.g. Hook has no "中立"). Click "Refresh list" after starting the gateway.',
   voiceShortcutLabel: 'Push-to-talk shortcut',
   voiceShortcutHint:
     'Such as Alt+V / Ctrl+Shift+Space / F8. Hold to talk, release to finish; press again while speaking to interrupt. The host registers a system-wide hotkey, so it also works while DSH is in the background, minimized, or covered by another app (DSH must be running; Windows only).',
@@ -1397,6 +1420,20 @@ null = 注销。
     const [voice, setVoice] = useState('');
     const [micDeviceId, setMicDeviceId] = useState('');
     const [hideButton, setHideButton] = useState(false);
+    /**
+     * 语音供应商：'edge' = edge-tts（微软音色），'gpt-sovits' = 本地角色网关。
+     *
+     * 为什么要有这个开关而不是只留一个音色框：两条路的**音色标识完全不是一套**
+     * （edge 是 `zh-CN-XiaoyiNeural`，网关是「三月七」这种角色名）。
+     * 混在一个输入框里，用户切来切去必然会填出对方不认的值，
+     * 表现就是合成报 `Invalid voice`。分开选，各自给各自的候选。
+     */
+    const [provider, setProvider] = useState<'edge' | 'gpt-sovits'>('edge');
+    const [style, setStyle] = useState('');
+    const [endpoint, setEndpoint] = useState('');
+    /** 网关上的可用角色与各自情感（GET /voice/voices，宿主代理） */
+    const [roleList, setRoleList] = useState<Array<{ name: string; styles: string[] }>>([]);
+    const [roleError, setRoleError] = useState('');
     const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'played' | 'error'>('idle');
     const [previewMsg, setPreviewMsg] = useState('');
     const [mics, setMics] = useState<Array<{ id: string; label: string }>>([]);
@@ -1419,12 +1456,23 @@ null = 注销。
         try {
           const res = await fetch('/dsh-whale-girl/voice/config', { cache: 'no-store' });
           if (!res.ok || !alive) return;
-          const data = (await res.json()) as { shortcut?: unknown; voice?: unknown; micDeviceId?: unknown; hideButton?: unknown };
+          const data = (await res.json()) as {
+            shortcut?: unknown;
+            voice?: unknown;
+            micDeviceId?: unknown;
+            hideButton?: unknown;
+            provider?: unknown;
+            style?: unknown;
+            endpoint?: unknown;
+          };
           if (!alive) return;
           if (typeof data.shortcut === 'string') setShortcut(data.shortcut);
           if (typeof data.voice === 'string') setVoice(data.voice);
           if (typeof data.micDeviceId === 'string') setMicDeviceId(data.micDeviceId);
           if (data.hideButton === 'true') setHideButton(true);
+          if (data.provider === 'gpt-sovits' || data.provider === 'edge') setProvider(data.provider);
+          if (typeof data.style === 'string') setStyle(data.style);
+          if (typeof data.endpoint === 'string') setEndpoint(data.endpoint);
         } catch {
           /* 取不到就留空，用户自己填 */
         }
@@ -1442,6 +1490,44 @@ null = 注销。
       return () => {
         alive = false;
       };
+    }, []);
+
+    /**
+     * 拉一次网关上的角色清单。
+     *
+     * 不放在上面的 useEffect 里：那个只跑一次，而网关可能**后启动**
+     * （主人先开 DSH、再开 TTS 服务）。这里给一个「刷新」按钮手动重试，
+     * 比让用户重启 DSH 好得多。
+     */
+    const loadRoles = async (): Promise<void> => {
+      try {
+        const res = await fetch('/dsh-whale-girl/voice/voices', { cache: 'no-store' });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          message?: string;
+          voices?: Array<{ name?: unknown; styles?: unknown }>;
+        };
+        if (data.ok !== true) {
+          setRoleError(data.message ?? '网关不可用');
+          setRoleList([]);
+          return;
+        }
+        const list = (data.voices ?? [])
+          .map((item) => ({
+            name: typeof item.name === 'string' ? item.name : '',
+            styles: Array.isArray(item.styles) ? item.styles.filter((s): s is string => typeof s === 'string') : [],
+          }))
+          .filter((item) => item.name !== '');
+        setRoleList(list);
+        setRoleError('');
+      } catch (e) {
+        setRoleError(e instanceof Error ? e.message : String(e));
+        setRoleList([]);
+      }
+    };
+
+    useEffect(() => {
+      void loadRoles();
     }, []);
 
     /**
@@ -1642,7 +1728,16 @@ null = 注销。
         const res = await fetch('/dsh-whale-girl/voice/config', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ shortcut, voice, micDeviceId, hideButton: hideButton ? 'true' : 'false' }),
+          body: JSON.stringify({
+            shortcut,
+            voice,
+            micDeviceId,
+            hideButton: hideButton ? 'true' : 'false',
+            provider,
+            // style / endpoint 留空时传空串 → 宿主把该键删掉（回落默认值）
+            style,
+            endpoint,
+          }),
         });
         const data = (await res.json()) as {
           ok?: boolean;
@@ -1679,7 +1774,88 @@ null = 注销。
       children: [
         cardHead(t('voiceTitle'), t('voiceHint')),
         statusLine === '' ? null : h('p', { className: 'dsh-whale-girl-cfg__note', children: statusLine }),
-        // 麦克风选择：整行独占——设备名可能很长，挤在两列里会被截断
+
+        // ── 语音供应商 ────────────────────────────────────────────────
+        // 两条路的音色标识不是一套，必须分开选（详见 provider 状态上的注释）。
+        field(
+          t('voiceProviderLabel'),
+          h('select', {
+            className: inputClass,
+            value: provider,
+            onChange: (e: ChangeEvent<HTMLSelectElement>) => {
+              const next = e.target.value === 'gpt-sovits' ? 'gpt-sovits' : 'edge';
+              setProvider(next);
+              // 切供应商时把音色清空：两边标识不通用，留着旧值必然合成失败
+              setVoice('');
+              setStatus('idle');
+            },
+            children: [
+              h('option', { key: 'edge', value: 'edge', children: t('voiceProviderEdge') }),
+              h('option', { key: 'gsv', value: 'gpt-sovits', children: t('voiceProviderGsv') }),
+            ],
+          }),
+          provider === 'gpt-sovits'
+            ? roleError === ''
+              ? `${t('voiceProviderHint')}（${roleList.length} 个角色）`
+              : `${t('voiceProviderHint')}（${roleError}）`
+            : t('voiceProviderHintEdge'),
+          true,
+        ),
+
+        // ── GPT-SoVITS：角色下拉 + 情感下拉 ───────────────────────────
+        provider === 'gpt-sovits'
+          ? field(
+              t('voiceRoleLabel'),
+              h('div', {
+                style: { display: 'flex', gap: '8px', alignItems: 'center' },
+                children: [
+                  h('select', {
+                    className: inputClass,
+                    value: voice,
+                    style: { flex: '2 1 0', minWidth: '0' },
+                    onChange: (e: ChangeEvent<HTMLSelectElement>) => {
+                      setVoice(e.target.value);
+                      // 换角色时情感可能不被支持（虎克没有"中立"），清掉让用户重选
+                      setStyle('');
+                      setStatus('idle');
+                    },
+                    children: [
+                      h('option', { key: '', value: '', children: t('voiceRolePlaceholder') }),
+                      ...roleList.map((r) => h('option', { key: r.name, value: r.name, children: r.name })),
+                    ],
+                  }),
+                  h('select', {
+                    className: inputClass,
+                    value: style,
+                    style: { flex: '1 1 0', minWidth: '0' },
+                    onChange: (e: ChangeEvent<HTMLSelectElement>) => {
+                      setStyle(e.target.value);
+                      setStatus('idle');
+                    },
+                    children: [
+                      h('option', { key: '', value: '', children: t('voiceStyleAuto') }),
+                      // 只列当前角色支持的情感——每个角色的情感集合不同
+                      ...(roleList.find((r) => r.name === voice)?.styles ?? []).map((s) =>
+                        h('option', { key: s, value: s, children: s }),
+                      ),
+                    ],
+                  }),
+                  h('button', {
+                    type: 'button',
+                    className: 'dsh-whale-girl-cfg__btn',
+                    onClick: () => void loadRoles(),
+                    children: t('voiceRoleRefresh'),
+                  }),
+                ],
+              }),
+              roleError === ''
+                ? t('voiceRoleHint')
+                : `${t('voiceRoleHint')}　⚠ ${roleError}`,
+              true,
+            )
+          : null,
+
+        // ── 麦克风选择：整行独占——设备名可能很长，挤在两列里会被截断 ──
         field(
           t('voiceMicLabel'),
           h('div', {

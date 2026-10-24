@@ -76,7 +76,15 @@ import { configuredModel } from './model-selection';
 import { limitPool, pickMeme, readMemePool } from './memes';
 import { decideBroadcast, normalizeBroadcastText } from './broadcast';
 import { decideAnim } from './anim';
-import { decodeAudioBase64, synthesize, transcribe, disposeVoiceWorkers, DEFAULT_VOICE, DEFAULT_RATE } from './voice';
+import {
+  decodeAudioBase64,
+  synthesize,
+  transcribe,
+  disposeVoiceWorkers,
+  DEFAULT_VOICE,
+  DEFAULT_RATE,
+  DEFAULT_GATEWAY_ENDPOINT,
+} from './voice';
 import { captureFrames, captureScreen, frameDiff, saveSnapshot, snapshotUsage, SIGHT_DIR } from './sight';
 import { frameCaption, framePlan, shouldLookAtScreen } from './voice-vision';
 import { intentReply, parseVoiceIntent } from './voice-intent';
@@ -3699,10 +3707,28 @@ export function apply(ctx: any): void {
           if (current.shortcut !== undefined) next.shortcut = current.shortcut;
           if (current.micDeviceId !== undefined) next.micDeviceId = current.micDeviceId;
           if (current.hideButton !== undefined) next.hideButton = current.hideButton;
-          for (const key of ['voice', 'rate', 'pythonPath', 'language', 'shortcut', 'micDeviceId', 'hideButton'] as const) {
+          if (current.provider !== undefined) next.provider = current.provider;
+          if (current.endpoint !== undefined) next.endpoint = current.endpoint;
+          if (current.style !== undefined) next.style = current.style;
+          for (const key of [
+            'voice',
+            'rate',
+            'pythonPath',
+            'language',
+            'shortcut',
+            'micDeviceId',
+            'hideButton',
+            'provider',
+            'endpoint',
+            'style',
+          ] as const) {
             const value = patch[key];
             if (typeof value === 'string' && value.trim() !== '') next[key] = value.trim();
             else if (value === '') delete next[key];
+          }
+          // provider 只认这两个值：写错了删掉（回到默认 edge），不让非法值进文件
+          if (next.provider !== undefined && next.provider !== 'edge' && next.provider !== 'gpt-sovits') {
+            delete next.provider;
           }
           // 用 promises 版（本文件顶部已导入 mkdir/writeFile）；同步版没有导入，
           // 之前这里写成 mkdirSync，一保存就报 "mkdirSync is not defined"。
@@ -3726,6 +3752,67 @@ export function apply(ctx: any): void {
     if (rest === 'voice/hotkey') {
       if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
       return { kind: 'json', status: 200, obj: voiceHotkeyStatus() };
+    }
+
+    /**
+     * 可用的角色音色清单（给设置页的下拉列表用）。
+     *
+     * ── 为什么由宿主代理，而不是页面直接打网关 ──
+     * 1. 页面与网关不同源，浏览器会拦跨域（网关是个裸 http.server，没写 CORS 头）；
+     * 2. 网关地址是配置项，页面不该知道它；
+     * 3. 网关没起来时，这个接口要能给出**可解释的空列表**，而不是让页面吃一个网络错误。
+     *
+     * 上游是网关的 `GET /voices`（只读 voices.json，不依赖 GPT-SoVITS 本体是否加载完）。
+     * 失败一律返回 200 + ok:false，让设置页显示「网关未启动」而不是整页报错。
+     */
+    if (rest === 'voice/voices') {
+      if (method !== 'GET') return { kind: 'json', status: 405, obj: { error: 'method not allowed' } };
+      const cfg = readVoiceConfig();
+      const base = (cfg.endpoint ?? DEFAULT_GATEWAY_ENDPOINT).replace(/\/+$/, '');
+      try {
+        const response = await fetch(`${base}/voices`, { signal: AbortSignal.timeout(4_000) });
+        if (!response.ok) {
+          return {
+            kind: 'json',
+            status: 200,
+            obj: { ok: false, reason: 'gateway-unavailable', message: `网关返回 HTTP ${response.status}`, voices: [] },
+          };
+        }
+        const payload = (await response.json()) as {
+          voices?: Array<{ name?: unknown; styles?: unknown }>;
+          default_voice?: unknown;
+          default_style?: unknown;
+        };
+        const voices = (payload.voices ?? [])
+          .map((item) => ({
+            name: typeof item.name === 'string' ? item.name : '',
+            styles: Array.isArray(item.styles) ? item.styles.filter((s): s is string => typeof s === 'string') : [],
+          }))
+          .filter((item) => item.name !== '');
+        return {
+          kind: 'json',
+          status: 200,
+          obj: {
+            ok: true,
+            endpoint: base,
+            current: { voice: cfg.voice, style: cfg.style ?? '', provider: cfg.provider ?? 'edge' },
+            defaultVoice: typeof payload.default_voice === 'string' ? payload.default_voice : '',
+            defaultStyle: typeof payload.default_style === 'string' ? payload.default_style : '',
+            voices,
+          },
+        };
+      } catch (e) {
+        return {
+          kind: 'json',
+          status: 200,
+          obj: {
+            ok: false,
+            reason: 'gateway-unavailable',
+            message: `本地语音网关不可用：${base}（${e instanceof Error ? e.message : String(e)}）`,
+            voices: [],
+          },
+        };
+      }
     }
 
     // ── 语音 ──────────────────────────────────────────────────────────────
