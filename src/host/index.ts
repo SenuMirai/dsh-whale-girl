@@ -1588,7 +1588,14 @@ export function apply(ctx: any): void {
     pythonPath?: string;
     language?: string;
     shortcut?: string;
-    micDeviceId?: string;    hideButton?: string;
+    micDeviceId?: string;
+    hideButton?: string;
+    /** 'gpt-sovits' = 本地网关；'edge' = edge-tts（缺省） */
+    provider?: 'edge' | 'gpt-sovits';
+    /** 本地 GPT-SoVITS 网关地址 */
+    endpoint?: string;
+    /** 情感风格（网关按它挑参考音频） */
+    style?: string;
   } => {
     const fallback = { voice: DEFAULT_VOICE, rate: DEFAULT_RATE } as {
       voice: string;
@@ -1596,7 +1603,11 @@ export function apply(ctx: any): void {
       pythonPath?: string;
       language?: string;
       shortcut?: string;
-      micDeviceId?: string;      hideButton?: string;
+      micDeviceId?: string;
+      hideButton?: string;
+      provider?: 'edge' | 'gpt-sovits';
+      endpoint?: string;
+      style?: string;
     };
     try {
       const raw = readFileSync(join(userRoot, 'voice.json'), 'utf8');
@@ -1609,7 +1620,14 @@ export function apply(ctx: any): void {
       const micDeviceId =
         typeof parsed.micDeviceId === 'string' && parsed.micDeviceId.trim() !== '' ? parsed.micDeviceId.trim() : undefined;
       const hideButton = typeof parsed.hideButton === 'string' && parsed.hideButton.trim() !== '' ? parsed.hideButton.trim() : undefined;
-      return { voice, rate, pythonPath, language, shortcut, micDeviceId, hideButton };
+      // provider 只认这两个值：写错了当作 edge（不知道的供应商不能瞎猜，
+      // 否则会走进一个根本没实现的合成路径，表现为"点了没声"）
+      const provider =
+        parsed.provider === 'gpt-sovits' ? ('gpt-sovits' as const) : parsed.provider === 'edge' ? ('edge' as const) : undefined;
+      const endpoint =
+        typeof parsed.endpoint === 'string' && parsed.endpoint.trim() !== '' ? parsed.endpoint.trim() : undefined;
+      const style = typeof parsed.style === 'string' && parsed.style.trim() !== '' ? parsed.style.trim() : undefined;
+      return { voice, rate, pythonPath, language, shortcut, micDeviceId, hideButton, provider, endpoint, style };
     } catch {
       // 文件不存在 / 不是合法 JSON：静默回落默认值（语音是可选能力，不该因配置手滑让插件报错）
       return fallback;
@@ -3739,6 +3757,11 @@ export function apply(ctx: any): void {
           voice: typeof parsed.voice === 'string' ? parsed.voice : voiceCfg.voice,
           rate: typeof parsed.rate === 'string' ? parsed.rate : voiceCfg.rate,
           pythonPath: voiceCfg.pythonPath,
+          // 供应商/网关/情感都从 voice.json 来；请求体可以单句覆盖 style
+          // （比如这句要"生气"，下一句要"开心"——桌宠的情绪是逐句变的）。
+          provider: voiceCfg.provider,
+          endpoint: voiceCfg.endpoint,
+          style: typeof parsed.style === 'string' ? parsed.style : voiceCfg.style,
         });
         if (!tts.ok) {
           return { kind: 'json', status: 200, obj: { ok: false, reason: tts.reason, message: tts.message } };

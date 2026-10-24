@@ -28,7 +28,7 @@ An AI whale-girl companion that lives inside [DeepSeek Harness](https://github.c
 |---|---|
 | **透明桌宠** | 106 段 VP9-alpha 透明动画；待机、点击、拖拽、移动、碎碎念、余额气泡等状态 |
 | **文字对话** | 走 DSH 当前模型；人设、记忆落盘、上下文压缩；支持气泡与右键对话 |
-| **实时语音** | 本地 SenseVoice ASR + edge-tts 语音合成；按住说话，无需显卡；支持全局热键 |
+| **实时语音** | 本地 SenseVoice ASR + **GPT-SoVITS 角色音色**（可回退 edge-tts）；按住说话，支持全局热键 |
 | **屏幕感知** | 截图仅在内存中处理，交给 DSH 视觉模型，再以气泡搭话；默认关闭，可核对快照 |
 | **游戏陪玩** | 识屏的「陪玩模式」：看战况、点评、提醒开团 |
 | **游戏代打** | 键鼠注入 + 决策循环 + 三层急停；默认空跑，需显式开启 |
@@ -88,12 +88,56 @@ pnpm run bundle
 | 路径 | 内容 |
 |---|---|
 | `$DSH_HOME/dsh-whale-girl/main-config.jsonc` | 用户配置（只写覆盖项） |
+| `$DSH_HOME/dsh-whale-girl/voice.json` | 语音配置（音色 / 供应商 / 网关地址 / 热键） |
 | `$DSH_HOME/dsh-whale-girl/memory.json` | 对话记忆 |
 | `$DSH_HOME/dsh-whale-girl/main-animation/` | 自定义动画 |
 | `$DSH_HOME/dsh-whale-girl/memes/` | 自定义表情包 |
 | `$DSH_HOME/dsh-whale-girl/pet/` | 额外 pet pack |
 
 仓库**不包含**任何用户记忆、聊天记录、截图、账号或令牌；上述文件只存在于本机。
+
+### 语音：GPT-SoVITS 角色音色
+
+从 2026-10 起，桌面语音支持本地 **GPT-SoVITS** 角色音色，与 `dsh-qq-group` 共用同一套模型与网关。
+
+```
+按住 Alt+V → 本地 SenseVoice ASR → 模型回复
+  → GPT-SoVITS 网关（127.0.0.1:50123）→ 角色音色 WAV → 播放
+     ↑ 网关不可用时自动回退 edge-tts，不会"没声音"
+```
+
+`voice.json` 里两个字段决定走哪条：
+
+```jsonc
+{
+  "provider": "gpt-sovits",              // 或 "edge"（默认）
+  "voice": "三月七",                      // 角色名；edge 模式下是 zh-CN-XiaoyiNeural 这类
+  "style": "开心",                        // 情感，网关按它挑参考音频
+  "endpoint": "http://127.0.0.1:50123"   // 网关地址
+}
+```
+
+**为什么是网关而不是直接调 Python**：GPT-SoVITS 本体是常驻服务（`api_v2.py` 听 9880），
+换音色要重新加载上百 MB 权重。网关负责「切换权重 + 按情感挑参考音频 + 拼 prompt」，
+插件只做「给文本和音色，拿 WAV」。这样宿主进程里不用塞 Python 模型，
+插件启动也不会被拖慢几十秒。
+
+**必须有的回退**：网关是独立进程，没启动或崩了的时候，若直接报错桌宠就彻底不会说话了。
+所以先打 `/health`（2.5 秒超时），不通就**自动回退 edge-tts**，并在日志里写明原因。
+
+**延迟（CPU 实测，AMD Ryzen 7 7840HS）**：
+
+| 场景 | 耗时 |
+|---|---|
+| 网关热态，一句话（1–3 秒音频） | 3.4–6.8 秒 |
+| 切换角色后的第一句（加载权重） | 7–15 秒 |
+| `edge-tts` 回退路径 | 2 秒左右 |
+
+> 这不是"实时通话"的速度。GPT-SoVITS 在 CPU 上 rtf≈1–2（合成 1 秒音频要 1–2 秒计算），
+> 想要更快的唯一办法是上显卡。聊天/群里发语音都够用，但按住说话要多等几秒。
+
+**支持的角色**（取决于网关里配了什么，参考 `gsv_gateway.py` 的 `CHARACTERS`）：
+三月七、银狼、藿藿、白露、虎克、青雀、克拉拉——均带 6–7 种情感参考音频。
 
 ### 与 dsh-pet 的隔离
 

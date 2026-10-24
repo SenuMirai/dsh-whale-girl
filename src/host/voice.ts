@@ -38,6 +38,21 @@ export const DEFAULT_VOICE = 'zh-CN-XiaoyiNeural';
 /** 语速/音调：与原文一致，不修饰 */
 export const DEFAULT_RATE = '+0%';
 
+/**
+ * 本地 GPT-SoVITS 网关的默认地址。
+ *
+ * 为什么是 50123 而不是 9880：9880 是 GPT-SoVITS 本体（api_v2.py），
+ * 50123 是外面那层网关（C:\DSHwork\models\tts\gsv_gateway.py）。
+ * 网关负责「换角色权重 + 按情感挑参考音频 + 拼 prompt_text」这些脏活；
+ * 插件直接打 9880 的话，每个调用点都得自己拼那串参数，且换音色要自己管。
+ * 与 dsh-qq-group 用的是同一个网关、同一个端口，两边共享一份模型常驻内存。
+ */
+export const DEFAULT_GATEWAY_ENDPOINT = 'http://127.0.0.1:50123';
+
+/** 网关默认角色与情感（与 gsv_gateway.py 的 DEFAULT_VOICE/DEFAULT_STYLE 对齐） */
+export const DEFAULT_GATEWAY_VOICE = '三月七';
+export const DEFAULT_GATEWAY_STYLE = '开心';
+
 /** 单次合成超时：热调用约 1 秒，给足 25 秒余量兜卡死 */
 const TTS_TIMEOUT_MS = 25_000;
 
@@ -155,7 +170,17 @@ export function resolvePython(configured?: string): string {
 /** TTS 失败原因（结构化，前端据此显示人话，不静默） */
 export type TtsFailure = {
   ok: false;
-  reason: 'python-missing' | 'edge-tts-missing' | 'empty-text' | 'timeout' | 'worker-dead' | 'error';
+  reason:
+    | 'python-missing'
+    | 'edge-tts-missing'
+    | 'empty-text'
+    | 'timeout'
+    | 'worker-dead'
+    | 'error'
+    /** 本地 GPT-SoVITS 网关没起来 / 地址不对 / 连不上 */
+    | 'gateway-unavailable'
+    /** 网关在，但返回了错误（模型没加载、参考音频缺失、合成异常…） */
+    | 'gateway-error';
   message: string;
 };
 
@@ -374,20 +399,130 @@ export function disposeVoiceWorkers(): void {
 
 
 /**
+ * 本地 TTS 网关（GPT-SoVITS）合成。
+ *
+ * ── 为什么要走 HTTP 网关而不是直接调 Python ──
+ * GPT-SoVITS 本体是一个常驻的 Python 服务（api_v2.py 听 9880），换音色要重新加载
+ * 上百 MB 权重。把它塞进宿主进程既没法热重载、又会让插件启动慢几十秒。
+ * 所以这里只做一件事：**调一个已经在跑的 HTTP 网关**（默认 127.0.0.1:50123）。
+ * 网关负责切换权重、挑情感参考音频；插件只知道「给文本和音色，拿 WAV」。
+ *
+ * ── 为什么必须先健康检查 ──
+ * 服务没起来时 fetch 会等到超时（网关内部给合成留了 180 秒）。桌宠按住说话是
+ * **实时交互**，等三分钟等于卡死。所以先打 /health，2.5 秒不通就直接回退 edge-tts。
+ *
+ * ── 为什么返回 WAV 也要检查 ──
+ * 网关出错时返回的是 JSON 错误体，不是音频。只看 `response.ok` 会把一段 JSON
+ * 当音频丢给播放器，表现为「点了没声，也没有报错」——最难查的那种。所以校验 RIFF 头。
+ */
+async function synthesizeGateway(
+  endpoint: string,
+  text: string,
+  options: { voice?: string; style?: string },
+): Promise<TtsResult> {
+  const base = endpoint.trim().replace(/\/+$/, '');
+  if (base === '') {
+    return { ok: false, reason: 'gateway-unavailable', message: '本地 TTS 网关地址为空（voice.json 的 endpoint）' };
+  }
+
+  try {
+    const health = await fetch(`${base}/health`, { signal: AbortSignal.timeout(2_500) });
+    if (!health.ok) {
+      return { ok: false, reason: 'gateway-unavailable', message: `本地 TTS 网关未就绪（HTTP ${health.status}）` };
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      reason: 'gateway-unavailable',
+      message: `本地 TTS 网关不可用：${base}（${e instanceof Error ? e.message : String(e)}）`,
+    };
+  }
+
+  try {
+    // 合成超时给 120 秒：实测 CPU 上热态 2.4~3.3 秒/句，但换音色后的第一句
+    // 要加载权重（几十秒），不能按热态的时间卡。
+    const response = await fetch(`${base}/tts`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        text,
+        ...(options.voice === undefined ? {} : { voice: options.voice }),
+        ...(options.style === undefined ? {} : { style: options.style }),
+      }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      return { ok: false, reason: 'gateway-error', message: `本地 TTS 网关 ${response.status}：${detail.slice(0, 300)}` };
+    }
+    const audio = new Uint8Array(await response.arrayBuffer());
+    if (audio.length < 12 || audio[0] !== 0x52 || audio[1] !== 0x49 || audio[2] !== 0x46 || audio[3] !== 0x46) {
+      return { ok: false, reason: 'gateway-error', message: '本地 TTS 网关没有返回 WAV（RIFF 头缺失）' };
+    }
+    return { ok: true, audio, mime: 'audio/wav' };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: 'gateway-error',
+      message: `本地 TTS 网关调用失败：${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+}
+
+/**
  * 合成一段语音。
+ *
+ * ── 两条路：本地 GPT-SoVITS 优先，edge-tts 回退 ──
+ * `voice.json` 里 `provider` 决定走哪条：
+ *   - `"gpt-sovits"`（推荐）：用本地网关，音色/情感都由它决定；**失败自动回退 edge**
+ *   - `"edge"`（默认）：原来的 edge-tts，音色是微软的名字（zh-CN-XiaoyiNeural 之类）
+ *
+ * 回退这一步不能省：网关是独立进程，主人没启动它、或者它崩了的时候，
+ * 若直接抛错，桌宠就**彻底不会说话**了。回退到 edge 至少还有声音，日志里会写明原因。
  *
  * @param userRoot 插件用户目录（$DSH_HOME/dsh-whale-girl），用于落 worker 脚本
  * @param text 要合成的文本（纯文本；由调用方保证不含标记）
- * @param options voice 音色 / rate 语速 / pitch 音高 / volume 音量 / pythonPath 解释器
+ * @param options 音色 / 语速 / 音高 / 音量 / 解释器 / 供应商 / 网关地址 / 情感
  */
 export async function synthesize(
   userRoot: string,
   text: string,
-  options: { voice?: string; rate?: string; pitch?: string; volume?: string; pythonPath?: string } = {},
+  options: {
+    voice?: string;
+    rate?: string;
+    pitch?: string;
+    volume?: string;
+    pythonPath?: string;
+    /** 'gpt-sovits' 走本地网关；缺省 'edge' */
+    provider?: 'edge' | 'gpt-sovits';
+    /** 本地网关地址，如 http://127.0.0.1:50123 */
+    endpoint?: string;
+    /** 情感风格（网关决定支持哪些，如 开心/生气/中立） */
+    style?: string;
+  } = {},
 ): Promise<TtsResult> {
+  const provider = options.provider ?? 'edge';
+
+  if (provider === 'gpt-sovits') {
+    const local = await synthesizeGateway(options.endpoint ?? DEFAULT_GATEWAY_ENDPOINT, text, {
+      voice: options.voice,
+      style: options.style,
+    });
+    if (local.ok) return local;
+    // 回退：不让「网关没启动」变成「桌宠不会说话」
+    console.warn(`[dsh-whale-girl] 本地 GPT-SoVITS 失败，回退 edge-tts：${local.message}`);
+  }
+
+  // edge 的音色必须是合法的微软名字（`xx-XX-XxxNeural`）。
+  // 网关那边的音色是角色名（三月七/青雀…），直接传给 edge 会被拒，所以要换掉。
+  const edgeVoice =
+    typeof options.voice === 'string' && /^[a-z]{2}-[A-Z]{2}-/i.test(options.voice)
+      ? options.voice
+      : DEFAULT_VOICE;
+
   const python = resolvePython(options.pythonPath);
   const worker = workerFor(python, userRoot);
-  return worker.synthesize(text, options.voice ?? DEFAULT_VOICE, options.rate ?? DEFAULT_RATE, {
+  return worker.synthesize(text, edgeVoice, options.rate ?? DEFAULT_RATE, {
     pitch: options.pitch,
     volume: options.volume,
   });
